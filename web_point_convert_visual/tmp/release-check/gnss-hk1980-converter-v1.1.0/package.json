@@ -1,0 +1,17 @@
+{
+  "name": "gnss-hk1980-converter",
+  "version": "1.1.0",
+  "author": "Anthony Wong",
+  "private": true,
+  "description": "Local GNSS export preparation and LandsD WGS84 to HK1980 conversion",
+  "scripts": {
+    "start": "node server.js --open",
+    "test": "node --test tests/converter.test.cjs",
+    "test:live": "node tests/live-api.cjs",
+    "guide": "node scripts/build-guide.cjs",
+    "package": "node scripts/package-release.cjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

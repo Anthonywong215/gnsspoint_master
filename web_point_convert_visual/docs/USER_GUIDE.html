@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="author" content="Anthony Wong"><title>User guide · GNSS converter · Anthony Wong</title>
+<style>body{font:18px/1.8 "Segoe UI",Arial,sans-serif;color:#203831;background:#f4f6f2;margin:0}main{max-width:940px;margin:40px auto;padding:40px;background:white;border:1px solid #dfe6df;border-radius:12px}h1{font-size:38px;line-height:1.2}h2{margin-top:42px;font-size:25px}a{color:#17664d}nav{display:flex;gap:10px 22px;flex-wrap:wrap;padding:20px;background:#edf2e9;border-radius:8px;font-size:16px}code{font-family:Consolas,monospace;background:#edf2e9;padding:1px 4px;border-radius:3px}pre{background:#edf2e9;padding:18px;border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:16px}pre code{padding:0}img{max-width:100%;height:auto;border:1px solid #dfe6df;border-radius:8px}li{margin:9px 0}.top{display:flex;gap:24px;flex-wrap:wrap;font-size:16px}footer{margin-top:40px;border-top:1px solid #dfe6df;padding-top:18px;font-size:16px}@media(max-width:700px){body{font-size:17px}main{margin:0;padding:24px;border:0;border-radius:0}h1{font-size:31px}nav{display:block}nav a{display:block;margin:6px 0}}@media print{body{background:white;font-size:12pt}main{margin:0;padding:0;border:0;max-width:none}.top,nav{display:none}h2{break-after:avoid}pre,img{break-inside:avoid}a{color:inherit}}</style></head><body><main><div class="top"><a href="../index.html">Open converter</a><a href="USER_GUIDE.md">Markdown guide</a><span>Anthony Wong · v1.1.0 · Print with your browser</span></div><nav aria-label="Guide contents"><a href="#1-open-the-website">1. Open the website</a>
+<a href="#2-check-the-conversion-direction">2. Check the conversion direction</a>
+<a href="#3-choose-a-format-and-import">3. Choose a format and import</a>
+<a href="#4-review-groups-and-counts">4. Review groups and counts</a>
+<a href="#5-map-and-collection-playback">5. Map and collection playback</a>
+<a href="#6-convert-all-measurements">6. Convert all measurements</a>
+<a href="#7-download-unique-point-mean-csv">7. Download unique-point mean CSV</a>
+<a href="#8-create-coordinate-txt-for-txyz">8. Create coordinate.txt for TXYZ</a>
+<a href="#other-downloads">Other downloads</a>
+<a href="#troubleshooting">Troubleshooting</a>
+<a href="#reference-check">Reference check</a></nav><h1 id="user-guide">User guide</h1>
+<p><strong>GNSS → HK1980 coordinate converter · Anthony Wong · v1.1.0</strong></p>
+<p>From receiver TXT exports to unique-point mean coordinates for MicroStation.</p>
+<h2 id="1-open-the-website">1. Open the website</h2>
+<p>Extract the ZIP first. On Windows, double-click <code>start.cmd</code> and keep its server window open. It opens <code>http://127.0.0.1:8080</code>. Use Node.js 22 or later; no package installation is needed. On macOS/Linux, run <code>npm start</code> in the extracted folder and visit the same address.</p>
+<p>Opening <code>index.html</code> directly supports import, conversion and point overlays. Use the local server for the OSM background. If port 8080 is busy, stop your earlier server or set a different <code>PORT</code> before running <code>node server.js</code>.</p>
+<h2 id="2-check-the-conversion-direction">2. Check the conversion direction</h2>
+<p><strong>Input:</strong> WGS84 latitude, longitude and ellipsoidal height in metres.</p>
+<p><strong>Output:</strong> HK80 / HK1980 Grid Easting and Northing, plus height in metres above Hong Kong Principal Datum (<strong>mPD</strong>).</p>
+<p>The app uses <code>Elevation</code> for ellipsoidal height and ignores a separate <code>Height</code> field. Confirm the receiver's height datum: existing mPD/orthometric height must not be supplied as ellipsoidal height. Coordinate values alone cannot identify their datum.</p>
+<h2 id="3-choose-a-format-and-import">3. Choose a format and import</h2>
+<p>Drag in <code>.txt</code>, <code>.csv</code> or <code>.tsv</code> files, or click Browse. Required headers are <code>Point name</code>, <code>Latitude</code>, <code>Longitude</code>, <code>Elevation</code>. Column order is flexible; Date and Time are optional.</p>
+<ul>
+<li><strong>Auto:</strong> plain numbers are decimal degrees. Separated DMS such as <code>22°19′20.064″</code>, <code>22 19 20.064</code> or <code>22:19:20.064</code> is normalized locally.</li>
+<li><strong>Decimal degrees:</strong> decimal angles only; separated DMS is rejected.</li>
+<li><strong>DMS:</strong> complete degrees, minutes and seconds are required.</li>
+<li><strong>Packed DMS:</strong> explicitly interprets <code>22.1920064</code> as <code>22°19′20.064″</code>. Auto cannot distinguish that number from a decimal-degree angle, so select this mode yourself.</li>
+</ul>
+<p>N/S and E/W markers can prefix or suffix angles. Minutes/seconds must be below 60. Wrong hemisphere letters, contradictory signs, incomplete angles and coordinates outside Hong Kong are rejected with file/line details. A format change applies to later imports; clear and reimport to reinterpret existing data.</p>
+<p>Supported separators are comma, tab and semicolon. UTF-8 and UTF-16 with a byte-order mark work. Each file is limited to 20 MB. Accepted ranges: latitude 22.13–22.57°, longitude 113.82–114.48°, elevation −1000–10000 m. Importing a file again adds its readings again.</p>
+<p>Try <code>samples/demo_decimal.txt</code> (six synthetic readings of two points), or <code>samples/demo_dms.txt</code> (two DMS forms of the public manual example). These are demonstrations, not field measurements.</p>
+<h2 id="4-review-groups-and-counts">4. Review groups and counts</h2>
+<p><code>SC43.1</code>, <code>SC43.2</code>, <code>SC43.3</code> share unique point ID <strong>SC43</strong>. Only a final dot followed by digits is removed; IDs are case-sensitive. <code>AREA.SC43.003</code> becomes point <code>AREA.SC43</code>, measurement index <code>003</code>.</p>
+<p>The page distinguishes unique points from imported measurements. Expand a point, use Expand all / Collapse all, or select All measurements. Same-named readings from different files are retained separately. Measurements CSV/JSON preserves each original name, group ID, unique Record ID, source file/line and recorded time.</p>
+<h2 id="5-map-and-collection-playback">5. Map and collection playback</h2>
+<p>The map shows every accepted measurement and the full bounding rectangle, across all table pages. Fit all points restores the survey extent. Rejected rows are excluded.</p>
+<p>Play collection reveals readings one by one. Adjust the delay, pause/resume, replay or Show all points. The orange ring highlights the current reading; the readout gives its original name and collection time.</p>
+<p>When every reading has valid Date (<code>YYYY-MM-DD</code>) and Time (<code>HH:mm:ss</code>, optionally fractional seconds), playback sorts across all files by collection time. Equal timestamps keep import order. Otherwise the app explicitly uses file/import order. No missing dates are inferred or timezones converted. Delay is fixed per reading and does not reproduce actual time gaps.</p>
+<h2 id="6-convert-all-measurements">6. Convert all measurements</h2>
+<p>Click Convert with LandsD. The app makes two requests at a time; an individual request times out after 30 seconds. Stop conversion retains completed results. Convert remaining resumes or retries pending/failed readings.</p>
+<p>Each reading is converted individually before averaging. Expand a group to see mean, sample standard deviation, min/max and range of completed results. Sample SD uses <code>n − 1</code> and is unavailable for a single reading. Partial statistics display used/total counts.</p>
+<h2 id="7-download-unique-point-mean-csv">7. Download unique-point mean CSV</h2>
+<p>Use the separate <strong>Unique point means</strong> panel. A group enters this export only after <strong>all its accepted measurements convert</strong>. Incomplete groups remain in the measurement/statistics downloads, and the panel shows ready/incomplete counts.</p>
+<p>The default Results CSV has exactly four columns and one mean row per eligible ID:</p>
+<pre><code>ID,Easting,Northing,mPD
+SC43,832590.508,820358.910,26.009</code></pre>
+<p>Choose ID, Northing, Easting, mPD to swap the horizontal fields. Table and download values follow immediately without reconversion. Means are rounded to three decimals after averaging individual LandsD results.</p>
+<p><img alt="Unique point mean export panel" src="images/mean-export.png"></p>
+<h2 id="8-create-coordinate-txt-for-txyz">8. Create coordinate.txt for TXYZ</h2>
+<p>After conversion, click <strong>TXYZ TXT</strong>. The app directly downloads <code>coordinate.txt</code> without a header or BOM:</p>
+<pre><code>SC43,832590.508,820358.910,26.009</code></pre>
+<p><strong>T</strong> is unique point ID, <strong>X</strong> is mean Easting, <strong>Y</strong> is mean Northing and <strong>Z</strong> is mean mPD height. Fields are comma-separated and coordinates are in metres. Use a matching text-coordinate layout and comma delimiter in MicroStation. Bentley's <a href="https://bentleysystems.service-now.com/community?id=kb_article_view&amp;sysparm_article=KB0110853">coordinate-import guidance</a> describes its XYZ Text / Import Coordinates workflow; labels/options vary by installed version.</p>
+<p>With Northing-first selected, the button reads <strong>TYXZ TXT</strong>, and the row is <code>ID,Northing,Easting,mPD</code>. Match that Y/X order in the importer. TXT export rejects IDs containing commas, quotes or line breaks; Results CSV supports quoted IDs.</p>
+<h2 id="other-downloads">Other downloads</h2>
+<ul>
+<li><strong>Measurements CSV:</strong> all readings, point/record IDs, source, time, individual coordinates and errors.</li>
+<li><strong>Point stats CSV:</strong> one row per ID; counts, mean, sample SD, min/max and range. Includes partial groups for analysis.</li>
+<li><strong>JSON:</strong> individual readings with named coordinates and provenance.</li>
+<li><strong>Prepared CSV:</strong> four cleaned WGS84 fields, with DMS normalized to decimal degrees.</li>
+</ul>
+<p>Downloads include all applicable files/pages, independent of which groups are expanded. Save before refreshing or closing: the workspace is not stored permanently.</p>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<ul>
+<li><strong>No mean rows:</strong> finish/retry every reading for the point. Partially converted groups stay out of the four-column CAD exports.</li>
+<li><strong>Wrong angle format:</strong> choose the right mode, clear and reimport. Packed DMS is never guessed.</li>
+<li><strong>Blank background:</strong> use <code>start.cmd</code> or the local server and check internet access. Point overlays/bounds still work without tiles.</li>
+<li><strong>API error:</strong> inspect the reading's message, retry, or open its government request.</li>
+<li><strong>Playback seems stationary:</strong> repeated readings may be millimetres apart. Watch the time/counter or zoom in.</li>
+<li><strong>Port busy:</strong> stop an earlier local server or choose a different <code>PORT</code>.</li>
+</ul>
+<h2 id="reference-check">Reference check</h2>
+<p>Load manual example, then convert. <a href="https://www.geodetic.gov.hk/transform/v2/tformAPI_manual.pdf#page=9">LandsD Example 3</a> uses latitude <code>22.32224</code>, longitude <code>114.14118</code>, height <code>23.128</code>:</p>
+<pre><code>{ &quot;hkN&quot;: 820358.91, &quot;hkE&quot;: 832590.508, &quot;hkpd&quot;: 26.009 }</code></pre>
+<p>The app checks the live response; it never inserts expected values after a network failure.</p><footer>Anthony Wong · GNSS → HK1980 coordinate converter</footer></main></body></html>

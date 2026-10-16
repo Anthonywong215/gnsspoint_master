@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Prepare GNSS text exports and convert WGS84 coordinates to HK1980 using the Lands Department API."
+    />
+    <meta name="author" content="Anthony Wong" />
+    <title>GNSS → HK1980 · Coordinate converter</title>
+    <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="vendor/leaflet/leaflet.js" defer></script>
+    <script src="converter.js" defer></script>
+    <script src="map.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-icon" aria-hidden="true">⌖</span> FIELDWORK
+        <span class="brand-divider">/</span>
+        <span class="brand-sub">Coordinate tools</span>
+      </div>
+      <span class="local-tag"
+        ><span aria-hidden="true"></span> Local workspace</span
+      >
+    </header>
+    <main>
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">GNSS EXPORT UTILITY</p>
+          <h1>
+            From field points<br class="mobile-break" />
+            to HK1980.
+          </h1>
+          <p class="intro">
+            Drop your survey exports. Keep the four fields you need.<br />Convert
+            with the Hong Kong Lands Department.
+          </p>
+        </div>
+        <div class="system-path">
+          <span>WGS84</span><span aria-hidden="true">→</span
+          ><span>HK80 + mPD</span>
+        </div>
+      </div>
+
+      <div
+        class="datum-reminder"
+        role="note"
+        aria-label="Conversion direction and height datum"
+      >
+        <strong
+          >WGS84 latitude, longitude + ellipsoidal height
+          <span aria-hidden="true">→</span> HK80 northing, easting + height in
+          mPD</strong
+        >
+        <p>
+          HK80 means the HK1980 Grid. Output height is metres above Hong Kong
+          Principal Datum (mPD). Confirm your source uses WGS84 and ellipsoidal
+          height; the numbers alone cannot identify the datum.
+        </p>
+      </div>
+
+      <div class="import-layout">
+        <section class="panel import-panel" aria-labelledby="import-heading">
+          <div class="panel-heading">
+            <h2 id="import-heading">
+              <span class="step">01</span> Add your files
+            </h2>
+            <span class="muted small">.txt · .csv · .tsv</span>
+          </div>
+          <div class="import-options">
+            <label for="angle-format">Latitude / longitude format</label>
+            <select id="angle-format" aria-describedby="angle-format-help">
+              <option value="auto">
+                Auto · decimal degrees or separated DMS
+              </option>
+              <option value="decimal">Decimal degrees · 22.32224</option>
+              <option value="dms">DMS · 22°19′20.064″ or 22 19 20.064</option>
+              <option value="packed">Packed DMS · DD.MMSS…</option>
+            </select>
+            <p id="angle-format-help">
+              Auto treats plain numbers as decimal degrees. For
+              <code>22.191234</code> meaning <code>22°19′12.34″</code>, select
+              <strong>Packed DMS</strong>. DMS is normalized to decimal degrees
+              before conversion. This choice applies to the next import; clear
+              and reimport to change existing points.
+            </p>
+          </div>
+          <label
+            class="drop-zone"
+            id="drop-zone"
+            tabindex="0"
+            role="button"
+            aria-label="Choose GNSS files or drag and drop them here"
+          >
+            <input
+              id="file-input"
+              class="visually-hidden"
+              type="file"
+              accept=".txt,.csv,.tsv"
+              multiple
+              tabindex="-1"
+            />
+            <svg
+              class="upload-icon"
+              viewBox="0 0 48 48"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M14 33H10a6 6 0 0 1-1-12 13 13 0 0 1 25-4 8 8 0 0 1 3 16h-3"
+              />
+              <path d="M24 39V23m-6 6 6-6 6 6" />
+            </svg>
+            <strong>Drag &amp; drop GNSS files here</strong
+            ><span>or <span class="browse-link">browse files</span></span>
+            <span class="drop-note"
+              >Multiple files welcome · Original exports stay unchanged</span
+            >
+          </label>
+          <div class="import-footer">
+            <span
+              >Point name, latitude, longitude &amp; elevation · date/time kept
+              for playback.</span
+            ><button id="example-button" class="text-button" type="button">
+              Load manual example <span aria-hidden="true">↗</span>
+            </button>
+          </div>
+          <ul id="file-list" class="file-list" aria-label="Imported files"></ul>
+          <p
+            id="format-summary"
+            class="format-summary"
+            role="status"
+            hidden
+          ></p>
+        </section>
+
+        <aside class="panel method-panel" aria-labelledby="method-heading">
+          <p class="eyebrow">THE CONVERSION</p>
+          <h2 id="method-heading">
+            Four fields in.<br />Three coordinates out.
+          </h2>
+          <div class="mapping">
+            <div>
+              <span>Point name</span
+              ><span class="mapping-end">kept with each result</span>
+            </div>
+            <div>
+              <span>Latitude / Longitude</span
+              ><span class="mapping-end">WGS84 · decimal or DMS</span>
+            </div>
+            <div>
+              <span>Elevation</span
+              ><span class="mapping-end">WGS84 ellipsoidal height · m</span>
+            </div>
+          </div>
+          <div class="output-tags" id="output-tags">
+            <span>hkN <small>HK80 northing · m</small></span
+            ><span>hkE <small>HK80 easting · m</small></span
+            ><span>hkpd <small>HK height · mPD</small></span>
+          </div>
+          <p class="height-note">
+            Uses <strong>Elevation</strong> as the WGS84 ellipsoidal height.
+            Your export’s separate “Height” column is ignored. Do not supply an
+            existing mPD or orthometric height as ellipsoidal height.
+          </p>
+          <a
+            class="reference-link"
+            href="https://www.geodetic.gov.hk/transform/v2/tformAPI_manual.pdf#page=9"
+            target="_blank"
+            rel="noopener noreferrer"
+            >LandsD API manual · Example 3 <span aria-hidden="true">↗</span></a
+          >
+        </aside>
+      </div>
+
+      <div
+        id="notice"
+        class="notice"
+        role="status"
+        aria-live="polite"
+        hidden
+      ></div>
+      <details id="issues-panel" class="issues-panel" hidden>
+        <summary id="issues-summary">Import issues</summary>
+        <ul id="issues-list"></ul>
+      </details>
+
+      <section class="panel extent-panel" aria-labelledby="extent-heading">
+        <div class="panel-heading">
+          <div>
+            <h2 id="extent-heading">Survey extent</h2>
+            <p id="map-point-count" class="muted small">
+              Import points to see their location and bounding box.
+            </p>
+          </div>
+          <button
+            type="button"
+            id="fit-map-button"
+            class="button ghost"
+            disabled
+          >
+            Fit all points
+          </button>
+        </div>
+        <div class="playback-controls">
+          <button
+            id="play-map-button"
+            type="button"
+            class="button primary"
+            disabled
+          >
+            ▶ Play collection
+          </button>
+          <button
+            id="show-all-map-button"
+            type="button"
+            class="button ghost"
+            disabled
+          >
+            Show all points
+          </button>
+          <label for="playback-delay">Delay per measurement</label
+          ><select id="playback-delay" disabled>
+            <option value="50">0.05 s</option>
+            <option value="100" selected>0.1 s</option>
+            <option value="250">0.25 s</option>
+            <option value="500">0.5 s</option>
+            <option value="1000">1 s</option>
+            <option value="2000">2 s</option>
+          </select>
+        </div>
+        <div class="playback-readout">
+          <progress
+            id="playback-progress"
+            value="0"
+            max="1"
+            aria-label="Collection playback progress"
+          ></progress>
+          <p id="playback-status" role="status" aria-live="polite">
+            Import points to play their collection sequence.
+          </p>
+        </div>
+        <p id="playback-order" class="map-detail">
+          Uses export date/time when every point has a valid timestamp;
+          otherwise uses import order. Playback uses a fixed delay, independent
+          of real time gaps.
+        </p>
+        <div class="extent-layout">
+          <div class="map-area">
+            <div id="map-empty" class="map-empty">
+              <span aria-hidden="true">⌖</span
+              ><strong>Your survey on the map</strong
+              ><span
+                >Accepted WGS84 points and their bounding box will appear
+                here.</span
+              >
+            </div>
+            <div
+              id="mini-map"
+              role="region"
+              aria-label="OpenStreetMap with survey points and data bounding box"
+              hidden
+            ></div>
+          </div>
+          <div class="extent-info">
+            <p class="eyebrow">WGS84 BOUNDING BOX</p>
+            <dl>
+              <div>
+                <dt>North · max latitude</dt>
+                <dd id="bound-north">—</dd>
+              </div>
+              <div>
+                <dt>South · min latitude</dt>
+                <dd id="bound-south">—</dd>
+              </div>
+              <div>
+                <dt>East · max longitude</dt>
+                <dd id="bound-east">—</dd>
+              </div>
+              <div>
+                <dt>West · min longitude</dt>
+                <dd id="bound-west">—</dd>
+              </div>
+            </dl>
+            <p class="map-legend">
+              <span class="legend-point" aria-hidden="true"></span> Imported
+              points <span class="legend-box" aria-hidden="true"></span> Data
+              bounds
+            </p>
+            <p class="map-detail">
+              Includes every accepted point across all files and table pages.
+              DMS is normalized before plotting. Rejected rows are excluded.
+            </p>
+          </div>
+        </div>
+        <p id="map-status" class="map-status" role="status">
+          OpenStreetMap background requires internet access. Point names remain
+          in your browser.
+        </p>
+      </section>
+
+      <section class="panel points-panel" aria-labelledby="points-heading">
+        <div class="points-heading">
+          <div>
+            <h2 id="points-heading">
+              <span class="step">02</span> Review &amp; convert
+            </h2>
+            <p class="muted small">
+              WGS84 input shown in decimal degrees → HK80 northing / easting (m)
+              + height (mPD).
+            </p>
+          </div>
+          <div class="actions">
+            <button
+              type="button"
+              id="clear-button"
+              class="button ghost"
+              disabled
+            >
+              Clear</button
+            ><button
+              type="button"
+              id="convert-button"
+              class="button primary"
+              disabled
+            >
+              Convert with LandsD <span aria-hidden="true">↗</span></button
+            ><button type="button" id="stop-button" class="button ghost" hidden>
+              Stop conversion
+            </button>
+          </div>
+        </div>
+        <div class="output-options">
+          <label for="output-order">Output order</label
+          ><select id="output-order" aria-describedby="output-order-note">
+            <option value="EN" selected>
+              ID, Easting, Northing, mPD · TXYZ
+            </option>
+            <option value="NE">ID, Northing, Easting, mPD · TYXZ</option>
+          </select>
+          <p id="output-order-note">
+            Mean results default to ID, Easting, Northing, mPD. Each unique
+            point contributes one mean after all its measurements convert.
+          </p>
+        </div>
+        <div class="group-controls">
+          <label for="point-view">Review</label
+          ><select id="point-view" aria-describedby="grouping-note">
+            <option value="grouped">Group by unique point ID</option>
+            <option value="measurements">All measurements</option></select
+          ><button
+            id="expand-groups-button"
+            type="button"
+            class="text-button"
+            disabled
+          >
+            Expand all</button
+          ><button
+            id="collapse-groups-button"
+            type="button"
+            class="text-button"
+            disabled
+          >
+            Collapse all
+          </button>
+          <p id="grouping-note">
+            SC43.1, SC43.2, SC43.3 → Point ID SC43. Group rows show
+            converted-measurement means; expand for every original reading and
+            its statistics. Counts include all files.
+          </p>
+        </div>
+        <div class="summary-strip">
+          <div>
+            <span class="stat-number" id="unique-point-count">0</span
+            ><span>unique points</span>
+          </div>
+          <div>
+            <span class="stat-number" id="point-count">0</span
+            ><span>measurements imported</span>
+          </div>
+          <div>
+            <span class="stat-number" id="ready-count">0</span
+            ><span>measurements ready</span>
+          </div>
+          <div>
+            <span class="stat-number green" id="converted-count">0</span
+            ><span>converted</span>
+          </div>
+          <div class="export-actions">
+            <button
+              id="prepared-button"
+              type="button"
+              class="text-button"
+              disabled
+            >
+              ↓ Prepared CSV</button
+            ><button
+              id="measurements-button"
+              type="button"
+              class="text-button"
+              disabled
+            >
+              ↓ Measurements CSV</button
+            ><button
+              id="statistics-button"
+              type="button"
+              class="text-button"
+              disabled
+            >
+              ↓ Point stats CSV</button
+            ><button
+              id="json-button"
+              type="button"
+              class="text-button"
+              disabled
+            >
+              ↓ JSON
+            </button>
+          </div>
+        </div>
+        <div id="progress-wrap" class="progress-wrap" hidden>
+          <progress id="progress" value="0" max="1"></progress
+          ><span id="progress-label" role="status"></span>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Point name</th>
+                <th scope="col">WGS84 lat <small>decimal °</small></th>
+                <th scope="col">WGS84 long <small>decimal °</small></th>
+                <th scope="col">Ellip. height <small>m</small></th>
+                <th scope="col" class="result-col" id="output-first-heading">
+                  hkN <small>HK80 m</small>
+                </th>
+                <th scope="col" class="result-col" id="output-second-heading">
+                  hkE <small>HK80 m</small>
+                </th>
+                <th scope="col" class="result-col">hkpd <small>mPD</small></th>
+                <th scope="col">Status</th>
+                <th scope="col">Request</th>
+              </tr>
+            </thead>
+            <tbody id="points-body">
+              <tr>
+                <td colspan="9">
+                  <div class="empty-state">
+                    <span class="empty-cross" aria-hidden="true">＋</span
+                    ><strong>Your points will appear here</strong
+                    ><span
+                      >Import an export or load the manual example to get
+                      started.</span
+                    >
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <span id="table-caption">No files loaded</span>
+          <div class="pagination">
+            <button
+              id="previous-button"
+              type="button"
+              class="text-button"
+              disabled
+              aria-label="Previous page"
+            >
+              ←</button
+            ><span id="page-label">Page 1 of 1</span
+            ><button
+              id="next-button"
+              type="button"
+              class="text-button"
+              disabled
+              aria-label="Next page"
+            >
+              →
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="panel mean-export-panel"
+        aria-labelledby="mean-export-heading"
+      >
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">MICROSTATION COORDINATE EXPORT</p>
+            <h2 id="mean-export-heading">Unique point means</h2>
+          </div>
+          <div class="actions">
+            <button
+              id="results-button"
+              type="button"
+              class="button ghost"
+              disabled
+            >
+              ↓ Results CSV</button
+            ><button
+              id="coordinate-button"
+              type="button"
+              class="button primary"
+              disabled
+            >
+              ↓ TXYZ TXT
+            </button>
+          </div>
+        </div>
+        <p id="mean-export-summary" class="mean-export-note">
+          Convert every measurement for a point to create one mean-coordinate
+          row. Results CSV and coordinate.txt follow the selected output order.
+        </p>
+        <div class="table-scroll">
+          <table aria-label="Unique point mean coordinates for CAD export">
+            <thead>
+              <tr>
+                <th scope="col">ID</th>
+                <th scope="col" id="mean-first-heading">Easting</th>
+                <th scope="col" id="mean-second-heading">Northing</th>
+                <th scope="col">mPD</th>
+              </tr>
+            </thead>
+            <tbody id="mean-results-body"></tbody>
+          </table>
+        </div>
+        <p id="mean-export-caption" class="mean-export-note"></p>
+      </section>
+      <details class="example-details">
+        <summary>Reference check · Manual Example 3</summary>
+        <div class="example-content">
+          <p>
+            WGS84 latitude <code>22.32224</code>, longitude
+            <code>114.14118</code>, ellipsoidal height <code>23.128 m</code>.
+          </p>
+          <pre>{"hkN": 820358.910,"hkE": 832590.508,"hkpd": 26.009}</pre>
+          <p>
+            The values above are the manual’s expected result. “Load manual
+            example” adds these inputs; “Convert with LandsD” makes a live
+            request.
+          </p>
+        </div>
+      </details>
+      <footer class="page-footer">
+        <span
+          ><strong>Anthony Wong</strong> · GNSS → HK1980<br />Points stay in
+          your browser; OSM loads background tiles. Convert sends coordinates to
+          LandsD.</span
+        ><span
+          ><a
+            href="docs/USER_GUIDE.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            >User guide ↗</a
+          >
+          ·
+          <a
+            href="https://www.geodetic.gov.hk/en/services/tform/tform.aspx"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Government tool ↗</a
+          ></span
+        >
+      </footer>
+    </main>
+  </body>
+</html>
