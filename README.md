@@ -18,6 +18,12 @@ A local website for preparing GNSS exports, converting individual WGS84 readings
 
 Read the [user guide](docs/USER_GUIDE.md), or open the [printable HTML guide](docs/USER_GUIDE.html) in a browser. Opening `index.html` directly supports import, conversion and point overlays; use the launcher for the OSM background.
 
+### Using a Git clone
+
+Launch `start.cmd` or `npm start` from the repository root. Keep `vendor/leaflet/` beside the root `index.html`: it supplies the local map script and stylesheet. The `docs/`, `samples/`, `scripts/` and `tests/` folders also belong at that root. The older `web_point_convert_visual/` copy is retained for reference; the root is the active application.
+
+If the map library is missing, no OSM tile requests can start. Run `npm test` to check that the page assets exist and that Leaflet/converter load before the map/application scripts. Open the app through its local web address for OSM background tiles; direct `file://` mode shows observation overlays without requesting tiles.
+
 ## Downloads
 
 | Download         | Contents                                                                                                                                   |

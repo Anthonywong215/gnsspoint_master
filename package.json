@@ -6,7 +6,7 @@
   "description": "Local GNSS export preparation and LandsD WGS84 to HK1980 conversion",
   "scripts": {
     "start": "node server.js --open",
-    "test": "node --test tests/converter.test.cjs",
+    "test": "node --test tests/converter.test.cjs tests/assets.test.cjs",
     "test:live": "node tests/live-api.cjs",
     "guide": "node scripts/build-guide.cjs",
     "package": "node scripts/package-release.cjs"
