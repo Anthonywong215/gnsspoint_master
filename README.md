@@ -61,7 +61,16 @@ Means are calculated from individual LandsD results, then rounded to three decim
 - EN/NE switching without reconversion; EN defaults to MicroStation TXYZ order.
 - Responsive layout, larger type and keyboard controls.
 
-Required columns: **Point name, Latitude, Longitude, Elevation**. Optional **Date** and **Time** drive playback. The app uses Elevation as WGS84 ellipsoidal height and ignores a separate Height column. Confirm the source datum; coordinate values alone cannot establish it.
+Receiver layouts are detected from column headings; column order is flexible:
+
+| Layout | Point name | Latitude | Longitude | WGS84 ellipsoidal height | Collection time |
+| --- | --- | --- | --- | --- | --- |
+| Standard export | Point name | Latitude | Longitude | Elevation | Date + Time (optional) |
+| Topcon export | Name | B | L | 84H | Start time (optional), e.g. `2026/10/16 09:32:30` |
+
+**Topcon's Elevation column is ignored; height comes only from 84H.** Existing E/N/Z and a standard export's separate Height are also ignored. Missing or ambiguous required headings are rejected. The file list shows the detected mapping. Topcon timestamps drive chronological playback across files; the original timestamp is retained in Measurements CSV/JSON. Invalid or missing timestamps use the existing import-order playback fallback.
+
+Topcon readings retain their full decimal precision. `2098.010.1` and `2098.010.2` group under **2098.010**, and duplicate names remain separate readings with separate Record IDs. Try [samples/demo_topcon.txt](samples/demo_topcon.txt) for a synthetic example. Both receiver layouts can be imported together. Confirm the source datum; coordinate values alone cannot establish it.
 
 ## Data and services
 

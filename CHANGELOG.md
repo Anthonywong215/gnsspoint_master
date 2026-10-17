@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Support Topcon Name/B/L/84H exports without mistaking Elevation or Z for ellipsoidal height; preserve precision, repeated observations and Start time for playback.
+- Show the detected receiver mapping and include a synthetic Topcon sample and import checks.
 - Restore the root entry point's bundled Leaflet assets and supporting folders, fixing missing-map-library errors after cloning.
 - Add asset-presence, Leaflet-integrity and deferred-script-order regression checks.
 - Restore repository metadata and root CI checks so tests and release packaging run from the clone root.

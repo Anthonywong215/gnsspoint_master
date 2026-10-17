@@ -16,11 +16,16 @@ Opening `index.html` directly supports import, conversion and point overlays. Us
 
 **Output:** HK80 / HK1980 Grid Easting and Northing, plus height in metres above Hong Kong Principal Datum (**mPD**).
 
-The app uses `Elevation` for ellipsoidal height and ignores a separate `Height` field. Confirm the receiver's height datum: existing mPD/orthometric height must not be supplied as ellipsoidal height. Coordinate values alone cannot identify their datum.
+Standard exports use `Elevation` for ellipsoidal height and ignore a separate `Height` field. Topcon exports use `84H` for ellipsoidal height and ignore `Elevation` and existing `E`, `N`, `Z` coordinates. Confirm the receiver's height datum: existing mPD/orthometric height must not be supplied as ellipsoidal height. Coordinate values alone cannot identify their datum.
 
 ## 3. Choose a format and import
 
-Drag in `.txt`, `.csv` or `.tsv` files, or click Browse. Required headers are `Point name`, `Latitude`, `Longitude`, `Elevation`. Column order is flexible; Date and Time are optional.
+Drag in `.txt`, `.csv` or `.tsv` files, or click Browse. Column order is flexible and the file list shows the detected receiver mapping:
+
+- **Standard exports:** `Point name`, `Latitude`, `Longitude`, `Elevation`. Optional `Date` and `Time` drive playback.
+- **Topcon exports:** `Name`, `B` (latitude), `L` (longitude), `84H` (WGS84 ellipsoidal height). Optional `Start time`, such as `2026/10/16 09:32:30`, is split into date and time for playback. Do not rename Topcon's `Elevation` to a height field. Missing `84H` is rejected instead of substituting `Elevation` or `Z`.
+
+You can mix files from both receivers in the same import. Topcon's decimal precision and original timestamps are retained. Invalid or missing timestamps preserve the readings and switch playback to import order, with a notice.
 
 - **Auto:** plain numbers are decimal degrees. Separated DMS such as `22°19′20.064″`, `22 19 20.064` or `22:19:20.064` is normalized locally.
 - **Decimal degrees:** decimal angles only; separated DMS is rejected.
@@ -31,13 +36,13 @@ N/S and E/W markers can prefix or suffix angles. Minutes/seconds must be below 6
 
 Supported separators are comma, tab and semicolon. UTF-8 and UTF-16 with a byte-order mark work. Each file is limited to 20 MB. Accepted ranges: latitude 22.13–22.57°, longitude 113.82–114.48°, elevation −1000–10000 m. Importing a file again adds its readings again.
 
-Try `samples/demo_decimal.txt` (six synthetic readings of two points), or `samples/demo_dms.txt` (two DMS forms of the public manual example). These are demonstrations, not field measurements.
+Try `samples/demo_decimal.txt` (six synthetic readings of two points), `samples/demo_dms.txt` (two DMS forms of the public manual example), or `samples/demo_topcon.txt` (Topcon headings, timestamps and repeated names). These are demonstrations, not field measurements.
 
 ## 4. Review groups and counts
 
 `SC43.1`, `SC43.2`, `SC43.3` share unique point ID **SC43**. Only a final dot followed by digits is removed; IDs are case-sensitive. `AREA.SC43.003` becomes point `AREA.SC43`, measurement index `003`.
 
-The page distinguishes unique points from imported measurements. Expand a point, use Expand all / Collapse all, or select All measurements. Same-named readings from different files are retained separately. Measurements CSV/JSON preserves each original name, group ID, unique Record ID, source file/line and recorded time.
+The page distinguishes unique points from imported measurements. Expand a point, use Expand all / Collapse all, or select All measurements. Same-named readings, including duplicates within one file, are retained separately. For example, `2098.010.1` and `2098.010.2` belong to **2098.010**. Measurements CSV/JSON preserves each original name, group ID, unique Record ID, source file/line, receiver format and recorded time, including Topcon's original timestamp.
 
 ## 5. Map and collection playback
 

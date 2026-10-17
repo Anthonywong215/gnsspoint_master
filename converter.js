@@ -385,14 +385,26 @@
     const records = parseDelimited(text, delimiter);
     if (!records.length) throw new Error("This file is empty.");
     const headers = records[0].cells.map(normalize);
+    // Topcon's "Elevation" is not its ellipsoidal height. Select a complete
+    // receiver schema before resolving fields; never fall back to that column.
+    const topcon = headers.some((name) => ["b", "l", "84h"].includes(name));
+    const aliases = topcon
+      ? { name: ["name"], lat: ["b"], long: ["l"], elevation: ["84h"] }
+      : ALIASES;
+    const profile = topcon ? "Topcon" : "Standard";
+    const fieldMapping = topcon
+      ? "Name → ID · B → latitude · L → longitude · 84H → WGS84 height"
+      : "Point name → ID · Latitude / Longitude · Elevation → WGS84 height";
     const columns = {};
-    for (const [key, names] of Object.entries(ALIASES)) {
+    for (const [key, names] of Object.entries(aliases)) {
       const indices = headers.flatMap((name, index) =>
         names.includes(name) ? [index] : [],
       );
       if (!indices.length)
         throw new Error(
-          `Missing required column: ${key === "name" ? "Point name" : key === "lat" ? "Latitude" : key === "long" ? "Longitude" : "Elevation"}. The export must have a header row. Height is not substituted for Elevation.`,
+          topcon
+            ? `Missing required Topcon column: ${names[0] === "84h" ? "84H (WGS84 ellipsoidal height)" : names[0].toUpperCase()}. Topcon requires Name, B, L and 84H; Elevation and Z are not substituted for 84H.`
+            : `Missing required column: ${key === "name" ? "Point name" : key === "lat" ? "Latitude" : key === "long" ? "Longitude" : "Elevation"}. The export must have a header row. Height is not substituted for Elevation.`,
         );
       if (indices.length > 1)
         throw new Error(
@@ -404,13 +416,27 @@
       issues = [],
       formatCounts = { decimal: 0, dms: 0, packed: 0, mixed: 0 };
     const dateIndex = headers.indexOf("date"),
-      timeIndex = headers.indexOf("time");
+      timeIndex = headers.indexOf("time"),
+      startTimeIndex = topcon ? headers.indexOf("starttime") : -1;
     for (const record of records.slice(1)) {
       const point = { source, line: record.line };
       for (const [key, index] of Object.entries(columns))
         point[key] = (record.cells[index] ?? "").trim();
       Object.assign(point, pointIdentity(point.name));
-      if (dateIndex !== -1 || timeIndex !== -1)
+      if (topcon) point.sourceFormat = "Topcon";
+      if (startTimeIndex !== -1) {
+        const original = (record.cells[startTimeIndex] || "").trim();
+        const timestamp = original.match(
+          /^(\d{4})[/-](\d{1,2})[/-](\d{1,2})\s+(\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?)$/,
+        );
+        point.collectedAt = {
+          date: timestamp
+            ? `${timestamp[1]}-${timestamp[2].padStart(2, "0")}-${timestamp[3].padStart(2, "0")}`
+            : "",
+          time: timestamp ? timestamp[4] : "",
+          original,
+        };
+      } else if (dateIndex !== -1 || timeIndex !== -1)
         point.collectedAt = {
           date: dateIndex === -1 ? "" : (record.cells[dateIndex] || "").trim(),
           time: timeIndex === -1 ? "" : (record.cells[timeIndex] || "").trim(),
@@ -452,7 +478,14 @@
         ]++;
       }
     }
-    return { points, issues, formatCounts, rowCount: records.length - 1 };
+    return {
+      points,
+      issues,
+      formatCounts,
+      profile,
+      fieldMapping,
+      rowCount: records.length - 1,
+    };
   }
 
   function buildUrl(point) {
@@ -599,6 +632,8 @@
         "Collection time",
         "Status",
         "Error",
+        "Source format",
+        "Original collection timestamp",
       ],
       points.map((p) => [
         safeName(p.name),
@@ -619,6 +654,8 @@
         safeName(p.collectedAt?.time || ""),
         p.status,
         p.error || "",
+        p.sourceFormat || "Standard",
+        safeName(p.collectedAt?.original || ""),
       ]),
     );
   }
@@ -710,6 +747,7 @@
           p.measurementIndex ?? pointIdentity(p.name).measurementIndex,
         recordId: p.recordId,
         sourceFile: p.source,
+        sourceFormat: p.sourceFormat || "Standard",
         sourceLine: p.line,
         latitude: Number(p.lat),
         longitude: Number(p.long),

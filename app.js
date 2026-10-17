@@ -291,14 +291,15 @@
     $("file-list").replaceChildren(
       ...state.files.map((file) => {
         const li = element("li");
-        li.append(
-          element("span", file.name, "filename"),
+        const details = element("div", undefined, "file-meta");
+        details.append(
           element(
-            "span",
-            `${file.uniqueCount} unique points · ${file.count} measurements · ${describeFormats(file.formatCounts)}${file.rejected ? ` · ${file.rejected} rejected` : ""}`,
-            "file-meta",
+            "div",
+            `${file.profile} · ${file.uniqueCount} unique points · ${file.count} measurements · ${describeFormats(file.formatCounts)}${file.rejected ? ` · ${file.rejected} rejected` : ""}`,
           ),
+          element("div", file.fieldMapping),
         );
+        li.append(element("span", file.name, "filename"), details);
         return li;
       }),
     );
@@ -500,6 +501,8 @@
           uniqueCount: C.groupMeasurements(result.points).length,
           rejected: result.issues.length,
           formatCounts: result.formatCounts,
+          profile: result.profile,
+          fieldMapping: result.fieldMapping,
         });
         for (const format of Object.keys(formats))
           formats[format] += result.formatCounts[format];
