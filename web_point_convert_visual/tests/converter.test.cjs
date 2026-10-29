@@ -613,13 +613,13 @@ test("mean exports combine measurements across files and reject unsafe TXYZ deli
   assert.equal(C.resultsCsv([]), "\uFEFFID,Easting,Northing,mPD\r\n");
 });
 
-const originals = path.resolve(
-  __dirname,
-  "../../web_conversion/original gnss export",
-);
+const originals = [
+  path.resolve(__dirname, "../../original gnss export"),
+  path.resolve(__dirname, "../../../original gnss export"),
+].find((directory) => fs.existsSync(directory));
 test(
   "every supplied GNSS record matches its four named original columns",
-  { skip: !fs.existsSync(originals) },
+  { skip: !originals },
   () => {
     const files = fs
       .readdirSync(originals)
@@ -634,6 +634,7 @@ test(
         .split(/\r\n|\n|\r/)
         .filter((line) => line.trim());
       const headers = lines.shift().split(",");
+      const topcon = headers.includes("84H");
       const parsed = C.parseExport(text, file);
       assert.deepEqual(parsed.issues, [], `${file} has no invalid rows`);
       assert.equal(
@@ -649,10 +650,10 @@ test(
       for (let i = 0; i < lines.length; i++) {
         const cells = lines[i].split(",");
         for (const [key, column] of [
-          ["name", "Point name"],
-          ["lat", "Latitude"],
-          ["long", "Longitude"],
-          ["elevation", "Elevation"],
+          ["name", topcon ? "Name" : "Point name"],
+          ["lat", topcon ? "B" : "Latitude"],
+          ["long", topcon ? "L" : "Longitude"],
+          ["elevation", topcon ? "84H" : "Elevation"],
         ])
           assert.equal(
             parsed.points[i][key],

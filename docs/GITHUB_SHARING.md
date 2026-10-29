@@ -14,6 +14,16 @@ Use the contents of the extracted release folder as the repository source. It in
 
 For Git command-line use, initialize the folder, add files, commit, then add your repository's own remote URL and push. No account, remote URL or credentials are preconfigured.
 
+## Commit with GitHub Desktop
+
+For this existing clone, use **File → Add local repository** and select `J:\001_workat_ESL\R&D\web_conversion\gnsspoint_master`. Its parent `web_conversion` folder is a workspace containing the repository and original survey files; select the `gnsspoint_master` folder in GitHub Desktop.
+
+1. Review the **Changes** tab. The updated `web_point_convert_visual/` files are inside this repository and include the Topcon/Sino importer, guide, sample and checks.
+2. Enter a summary such as **Update Topcon/Sino support in local website copies**.
+3. Click **Commit to main**, then **Push origin**.
+
+The separate `web_conversion\web_point_convert_visual` folder is a local runnable copy. Changes there alone do not appear in this repository. Generated ZIPs under the repository root's `release/` folder are ignored by Git; upload the ZIP separately as a GitHub release asset if needed. Original field exports stay outside the repository.
+
 ## Rebuild the downloadable ZIP
 
 ```text

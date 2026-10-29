@@ -153,7 +153,7 @@
               ><span class="mapping-end">WGS84 · decimal or DMS</span>
             </div>
             <div>
-              <span>Elevation</span
+              <span>Elevation / Topcon 84H</span
               ><span class="mapping-end">WGS84 ellipsoidal height · m</span>
             </div>
           </div>
@@ -163,9 +163,12 @@
             ><span>hkpd <small>HK height · mPD</small></span>
           </div>
           <p class="height-note">
-            Uses <strong>Elevation</strong> as the WGS84 ellipsoidal height.
-            Your export’s separate “Height” column is ignored. Do not supply an
-            existing mPD or orthometric height as ellipsoidal height.
+            Standard exports use <strong>Elevation</strong>; Topcon exports use
+            <strong>84H</strong> for WGS84 ellipsoidal height, with
+            <strong>B</strong> as latitude and <strong>L</strong> as longitude.
+            Topcon’s Elevation and E/N/Z, and a standard export’s separate Height,
+            are ignored. Do not supply existing mPD or orthometric height as
+            ellipsoidal height.
           </p>
           <a
             class="reference-link"

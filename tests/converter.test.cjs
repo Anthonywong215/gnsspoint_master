@@ -613,13 +613,13 @@ test("mean exports combine measurements across files and reject unsafe TXYZ deli
   assert.equal(C.resultsCsv([]), "\uFEFFID,Easting,Northing,mPD\r\n");
 });
 
-const originals = path.resolve(
-  __dirname,
-  "../../original gnss export",
-);
+const originals = [
+  path.resolve(__dirname, "../../original gnss export"),
+  path.resolve(__dirname, "../../../original gnss export"),
+].find((directory) => fs.existsSync(directory));
 test(
   "every supplied GNSS record matches its four named original columns",
-  { skip: !fs.existsSync(originals) },
+  { skip: !originals },
   () => {
     const files = fs
       .readdirSync(originals)

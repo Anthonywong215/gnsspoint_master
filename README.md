@@ -20,7 +20,9 @@ Read the [user guide](docs/USER_GUIDE.md), or open the [printable HTML guide](do
 
 ### Using a Git clone
 
-Launch `start.cmd` or `npm start` from the repository root. Keep `vendor/leaflet/` beside the root `index.html`: it supplies the local map script and stylesheet. The `docs/`, `samples/`, `scripts/` and `tests/` folders also belong at that root. The older `web_point_convert_visual/` copy is retained for reference; the root is the active application.
+Launch `start.cmd` or `npm start` from the repository root. Keep `vendor/leaflet/` beside the root `index.html`: it supplies the local map script and stylesheet. The `docs/`, `samples/`, `scripts/` and `tests/` folders also belong at that root. The `web_point_convert_visual/` copy includes the same Topcon/Sino import support and can also be launched from its own folder. The repository root is the main source for future edits.
+
+The supported Topcon/Sino layout uses **Name, B, L, 84H**. Both website copies keep the same height checks, original measurement IDs and collection-time playback. See [GitHub Desktop instructions](docs/GITHUB_SHARING.md#commit-with-github-desktop) to commit local changes.
 
 If the map library is missing, no OSM tile requests can start. Run `npm test` to check that the page assets exist and that Leaflet/converter load before the map/application scripts. Open the app through its local web address for OSM background tiles; direct `file://` mode shows observation overlays without requesting tiles.
 

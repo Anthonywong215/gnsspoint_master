@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Synchronize the local website copies with the Topcon/Sino importer and guide, retain deferred map resizing, and document the GitHub Desktop repository folder.
 - Support Topcon Name/B/L/84H exports without mistaking Elevation or Z for ellipsoidal height; preserve precision, repeated observations and Start time for playback.
 - Show the detected receiver mapping and include a synthetic Topcon sample and import checks.
 - Restore the root entry point's bundled Leaflet assets and supporting folders, fixing missing-map-library errors after cloning.

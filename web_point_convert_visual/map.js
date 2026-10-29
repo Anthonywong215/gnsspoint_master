@@ -274,14 +274,15 @@
     if (bounds.north === bounds.south && bounds.east === bounds.west)
       $("map-status").textContent +=
         " All points share one location; the bounding box has zero area.";
+    // Wait for the imported-point panel to finish layout before sizing Leaflet.
     requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
         if (map) {
-            map.invalidateSize(true);
-            fit();
+          map.invalidateSize(true);
+          fit();
         }
+      });
     });
-});
   }
   $("fit-map-button").addEventListener("click", fit);
   $("play-map-button").addEventListener("click", togglePlayback);

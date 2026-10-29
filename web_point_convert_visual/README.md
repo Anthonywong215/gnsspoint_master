@@ -18,6 +18,14 @@ A local website for preparing GNSS exports, converting individual WGS84 readings
 
 Read the [user guide](docs/USER_GUIDE.md), or open the [printable HTML guide](docs/USER_GUIDE.html) in a browser. Opening `index.html` directly supports import, conversion and point overlays; use the launcher for the OSM background.
 
+### Using a Git clone
+
+Launch `start.cmd` or `npm start` from the repository root. Keep `vendor/leaflet/` beside the root `index.html`: it supplies the local map script and stylesheet. The `docs/`, `samples/`, `scripts/` and `tests/` folders also belong at that root. The `web_point_convert_visual/` copy includes the same Topcon/Sino import support and can also be launched from its own folder. The repository root is the main source for future edits.
+
+The supported Topcon/Sino layout uses **Name, B, L, 84H**. Both website copies keep the same height checks, original measurement IDs and collection-time playback. See [GitHub Desktop instructions](docs/GITHUB_SHARING.md#commit-with-github-desktop) to commit local changes.
+
+If the map library is missing, no OSM tile requests can start. Run `npm test` to check that the page assets exist and that Leaflet/converter load before the map/application scripts. Open the app through its local web address for OSM background tiles; direct `file://` mode shows observation overlays without requesting tiles.
+
 ## Downloads
 
 | Download         | Contents                                                                                                                                   |
@@ -55,7 +63,16 @@ Means are calculated from individual LandsD results, then rounded to three decim
 - EN/NE switching without reconversion; EN defaults to MicroStation TXYZ order.
 - Responsive layout, larger type and keyboard controls.
 
-Required columns: **Point name, Latitude, Longitude, Elevation**. Optional **Date** and **Time** drive playback. The app uses Elevation as WGS84 ellipsoidal height and ignores a separate Height column. Confirm the source datum; coordinate values alone cannot establish it.
+Receiver layouts are detected from column headings; column order is flexible:
+
+| Layout | Point name | Latitude | Longitude | WGS84 ellipsoidal height | Collection time |
+| --- | --- | --- | --- | --- | --- |
+| Standard export | Point name | Latitude | Longitude | Elevation | Date + Time (optional) |
+| Topcon export | Name | B | L | 84H | Start time (optional), e.g. `2026/10/16 09:32:30` |
+
+**Topcon's Elevation column is ignored; height comes only from 84H.** Existing E/N/Z and a standard export's separate Height are also ignored. Missing or ambiguous required headings are rejected. The file list shows the detected mapping. Topcon timestamps drive chronological playback across files; the original timestamp is retained in Measurements CSV/JSON. Invalid or missing timestamps use the existing import-order playback fallback.
+
+Topcon readings retain their full decimal precision. `2098.010.1` and `2098.010.2` group under **2098.010**, and duplicate names remain separate readings with separate Record IDs. Try [samples/demo_topcon.txt](samples/demo_topcon.txt) for a synthetic example. Both receiver layouts can be imported together. Confirm the source datum; coordinate values alone cannot establish it.
 
 ## Data and services
 
