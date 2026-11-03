@@ -12,6 +12,94 @@
     revealed = 0,
     timer = null;
 
+  const mapPanel = document.querySelector(".extent-panel");
+  const sizeButtons = [...mapPanel.querySelectorAll("button[data-map-size]")];
+  let normalSize = "medium";
+  let fullScreen = false;
+
+  function resizeMap() {
+    // Preserve the current zoom, location and playback when the container changes.
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        map?.invalidateSize({ pan: true, animate: false });
+      }),
+    );
+  }
+
+  function renderMapSize() {
+    mapPanel.dataset.mapSize = fullScreen ? "fullscreen" : normalSize;
+    mapPanel.classList.toggle("is-map-fullscreen", fullScreen);
+    document.body.classList.toggle("map-fullscreen-open", fullScreen);
+    for (const button of sizeButtons)
+      button.setAttribute(
+        "aria-pressed",
+        String(button.dataset.mapSize === mapPanel.dataset.mapSize),
+      );
+    $("map-fullscreen-button").textContent = fullScreen
+      ? "Exit full screen"
+      : "Full screen";
+    pointsLayer?.eachLayer(updatePointTooltip);
+    resizeMap();
+  }
+
+  function updatePointTooltip(marker) {
+    const enabled = fullScreen || normalSize === "large";
+    if (enabled && !marker.getTooltip()) {
+      const label = document.createElement("span");
+      label.textContent = marker.options.surveyPointName;
+      marker.bindTooltip(label, {
+        direction: "top",
+        offset: [0, -6],
+        opacity: 0.95,
+      });
+    } else if (!enabled && marker.getTooltip()) marker.unbindTooltip();
+  }
+
+  async function exitMapFullscreen() {
+    if (document.fullscreenElement === mapPanel) {
+      try {
+        await document.exitFullscreen();
+      } catch {
+        /* Keep the visible exit control usable. */
+      }
+      if (document.fullscreenElement === mapPanel) return;
+    }
+    fullScreen = false;
+    renderMapSize();
+    $("map-fullscreen-button").focus({ preventScroll: true });
+  }
+
+  for (const button of sizeButtons)
+    button.addEventListener("click", async () => {
+      const size = button.dataset.mapSize;
+      if (size === "fullscreen") {
+        if (fullScreen) return exitMapFullscreen();
+        fullScreen = true;
+        renderMapSize();
+        try {
+          await mapPanel.requestFullscreen?.();
+        } catch {
+          /* Use the full-window layout when native fullscreen is unavailable. */
+        }
+        resizeMap();
+      } else {
+        normalSize = size;
+        if (fullScreen) await exitMapFullscreen();
+        renderMapSize();
+      }
+    });
+  document.addEventListener("fullscreenchange", () => {
+    if (fullScreen && document.fullscreenElement !== mapPanel) {
+      fullScreen = false;
+      renderMapSize();
+      $("map-fullscreen-button").focus({ preventScroll: true });
+    } else resizeMap();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && fullScreen) exitMapFullscreen();
+  });
+  window.addEventListener("resize", resizeMap);
+
   function fit(points) {
     const target = Array.isArray(points) ? C.coordinateBounds(points) : bounds;
     if (map && target) {
@@ -93,7 +181,8 @@
     const source = document.createElement("small");
     source.textContent = point.source || "";
     popup.append(title, identity, coordinates, time, source);
-    L.circleMarker([Number(point.lat), Number(point.long)], {
+    const marker = L.circleMarker([Number(point.lat), Number(point.long)], {
+      surveyPointName: point.name,
       radius: 4,
       color: point.mapOnly ? "#216baf" : "#17664d",
       weight: 1,
@@ -102,6 +191,7 @@
     })
       .bindPopup(popup)
       .addTo(pointsLayer);
+    updatePointTooltip(marker);
   }
   function clearTrail() {
     if (trailLayer) {

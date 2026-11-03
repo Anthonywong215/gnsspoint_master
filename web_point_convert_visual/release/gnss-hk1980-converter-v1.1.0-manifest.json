@@ -3,7 +3,7 @@
   "version": "1.1.0",
   "author": "Anthony Wong",
   "archive": "gnss-hk1980-converter-v1.1.0.zip",
-  "archiveSha256": "db18e1775bb9597ad6c3e3faf9834efc19d6072700fb12c9c950cffe51fbd041",
+  "archiveSha256": "9907114910635256698371e7a1fe95d2fd0206160ce83d68274b87e13c01837e",
   "files": [
     {
       "path": ".editorconfig",
@@ -27,8 +27,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "bytes": 1928,
-      "sha256": "4a263084dd4185dfa724090e26dbc258928d18d358462ee97e4171b1519f4ff7"
+      "bytes": 2105,
+      "sha256": "fb83ae131fefc920d9a8d179f5d8ed57009eef50d7c5a3b489f72c053d2ecde5"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -37,8 +37,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 8332,
-      "sha256": "1295a4f634588fba14ccc32daf9d2f3ba2f24c1184f3d6eed108b0adf8ad2578"
+      "bytes": 8461,
+      "sha256": "db58ffc7f7679a96a24896ed6794b41f4bcc764f251fc67f9dc127272474470b"
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
@@ -62,13 +62,13 @@
     },
     {
       "path": "docs/USER_GUIDE.html",
-      "bytes": 14578,
-      "sha256": "f936cc2bcc32b5ea893de379d8c77da9d0b3a52a13abc68fb19236cd7ec5a8d9"
+      "bytes": 15264,
+      "sha256": "6e83c5d32d66c9d3b3bdb83d27ad66d41470c647ec31f26bbc74221ca153726c"
     },
     {
       "path": "docs/USER_GUIDE.md",
-      "bytes": 10128,
-      "sha256": "1a799c18b860f017f395a815ceb5c2a9d18e9532695bfede15b3d6466c9195c4"
+      "bytes": 10702,
+      "sha256": "e92a8b3f4bce4cfaa3fd312a79a884394dd875ddfd05ea3baa7c8044628c3618"
     },
     {
       "path": "docs/images/mean-export.png",
@@ -82,13 +82,13 @@
     },
     {
       "path": "index.html",
-      "bytes": 23688,
-      "sha256": "dbd4b6a1f2f2d16c40c30c42c46ea71c787b82dffe8d740dba3f041ff24c2b30"
+      "bytes": 24418,
+      "sha256": "98b7aa0a22b672213b8534f6fa91efc8ad3c65e11aa2d8d09c9e2ab175b70176"
     },
     {
       "path": "map.js",
-      "bytes": 11469,
-      "sha256": "ea96821aa52f4d95e3cb587c610b4629f49ec8ee1abc13cdd8cea9510d2ac838"
+      "bytes": 14461,
+      "sha256": "4e191605fb28d2953b83b9af485259b8a48506b2585d960eb081b71cb9f3ceda"
     },
     {
       "path": "package.json",
@@ -137,8 +137,8 @@
     },
     {
       "path": "styles.css",
-      "bytes": 25024,
-      "sha256": "441506e20db2012d804a283de1e6d4074edb20e8f02dc877850c6879d4d7be03"
+      "bytes": 26652,
+      "sha256": "68a02d3a7af3fe5036a16676ef4c1d640bd8c2c69afddbe8c4abe93eaac498b0"
     },
     {
       "path": "tests/assets.test.cjs",

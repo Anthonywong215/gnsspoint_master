@@ -66,6 +66,10 @@ The page distinguishes unique points from imported measurements. Expand a point,
 
 The map shows every accepted measurement and the full bounding rectangle, across all table pages. Fit all points restores the survey extent. Rejected rows are excluded.
 
+Use **Map size** to select **Small**, **Medium** (default), **Large** or **Full screen**. Resizing keeps the current view and playback state. Full screen has an **Exit full screen** button; Escape also exits, restoring the previous size. If browser full screen is unavailable, the map fills the browser window instead.
+
+In **Large** and **Full screen**, hover over a point to see its original point name in a tooltip. This works for both green GNSS readings and blue pasted points, including readings revealed during playback. Clicking a point still opens its details.
+
 Play collection reveals readings one by one. Adjust the delay, pause/resume, replay or Show all points. The orange ring highlights the current reading; the readout gives its original name and collection time.
 
 When every reading has valid Date (`YYYY-MM-DD`) and Time (`HH:mm:ss`, optionally fractional seconds), playback sorts across all files by collection time. Equal timestamps keep import order. Otherwise the app explicitly uses file/import order. No missing dates are inferred or timezones converted. Delay is fixed per reading and does not reproduce actual time gaps.

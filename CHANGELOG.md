@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add Small/Medium/Large/Full screen map sizes with view/playback preservation and point-name hover tooltips in Large and Full screen for both GNSS readings and pasted points.
 - Add a writable Paste N,E,Z tab with text/file drop, HK1980 validation, blue map points and zoom to the pasted extent; retain original names/Z separately from GNSS conversion statistics.
 - Synchronize the local website copies with the Topcon/Sino importer and guide, retain deferred map resizing, and document the GitHub Desktop repository folder.
 - Support Topcon Name/B/L/84H exports without mistaking Elevation or Z for ellipsoidal height; preserve precision, repeated observations and Start time for playback.

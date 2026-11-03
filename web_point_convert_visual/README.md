@@ -72,6 +72,7 @@ Means are calculated from individual LandsD results, then rounded to three decim
 - `SC43.1`, `.2`, `.3` collapse under point ID `SC43`; all measurements remain available.
 - Unique point/measurement counts and converted mean/sample SD/min/max/range.
 - OSM mini map, bounding rectangle and chronological playback with recorded times and delay control.
+- Small, Medium, Large and Full screen map controls; hover over GNSS or pasted points in Large/Full screen to read their names.
 - EN/NE switching without reconversion; EN defaults to MicroStation TXYZ order.
 - Responsive layout, larger type and keyboard controls.
 

@@ -978,6 +978,7 @@ th {
 
 /* Survey extent and mini map. */
 .extent-panel {
+  --map-height: 420px;
   margin-top: 24px;
   padding: 22px;
 }
@@ -1001,7 +1002,7 @@ th {
 }
 #mini-map,
 .map-empty {
-  height: 310px;
+  height: var(--map-height);
   width: 100%;
 }
 #mini-map {
@@ -1114,7 +1115,85 @@ th {
   }
   #mini-map,
   .map-empty {
-    height: 280px;
+    height: var(--map-height);
+  }
+}
+
+.extent-panel[data-map-size="small"] {
+  --map-height: 260px;
+}
+.extent-panel[data-map-size="large"] {
+  --map-height: 640px;
+}
+.map-size-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.map-size-controls > span {
+  font-size: 17px;
+  margin-right: 6px;
+}
+.map-size-controls button {
+  min-height: 42px;
+  padding: 8px 15px;
+  border: 1px solid #b8ccba;
+  border-radius: 7px;
+  background: white;
+  color: var(--green);
+  font-size: 17px;
+}
+.map-size-controls [aria-pressed="true"] {
+  background: var(--green);
+  border-color: var(--green);
+  color: white;
+}
+body.map-fullscreen-open {
+  overflow: hidden;
+}
+.extent-panel.is-map-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  margin: 0;
+  padding: 16px;
+  border-radius: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+.extent-panel.is-map-fullscreen .extent-layout {
+  flex: 1 0 180px;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 180px;
+}
+.extent-panel.is-map-fullscreen .extent-info {
+  display: none;
+}
+.extent-panel.is-map-fullscreen #mini-map,
+.extent-panel.is-map-fullscreen .map-empty {
+  height: 100%;
+  min-height: 180px;
+}
+.extent-panel.is-map-fullscreen .map-status,
+.extent-panel.is-map-fullscreen #playback-order {
+  display: none;
+}
+@media (max-width: 480px) {
+  .map-size-controls > span {
+    flex-basis: 100%;
+  }
+  .map-size-controls button {
+    flex: 1;
+    padding-inline: 9px;
+    font-size: 16px;
+    white-space: nowrap;
   }
 }
 

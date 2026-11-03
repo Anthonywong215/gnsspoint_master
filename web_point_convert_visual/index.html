@@ -285,7 +285,11 @@
         <ul id="issues-list"></ul>
       </details>
 
-      <section class="panel extent-panel" aria-labelledby="extent-heading">
+      <section
+        class="panel extent-panel"
+        aria-labelledby="extent-heading"
+        data-map-size="medium"
+      >
         <div class="panel-heading">
           <div>
             <h2 id="extent-heading">Survey extent</h2>
@@ -300,6 +304,26 @@
             disabled
           >
             Fit all points
+          </button>
+        </div>
+        <div class="map-size-controls" role="group" aria-label="Map size">
+          <span>Map size</span>
+          <button type="button" data-map-size="small" aria-pressed="false">
+            Small
+          </button>
+          <button type="button" data-map-size="medium" aria-pressed="true">
+            Medium
+          </button>
+          <button type="button" data-map-size="large" aria-pressed="false">
+            Large
+          </button>
+          <button
+            type="button"
+            id="map-fullscreen-button"
+            data-map-size="fullscreen"
+            aria-pressed="false"
+          >
+            Full screen
           </button>
         </div>
         <div class="playback-controls">
