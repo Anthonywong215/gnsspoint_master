@@ -4,6 +4,9 @@
   const $ = (id) => document.getElementById(id);
   const state = {
     points: [],
+    gridPoints: [],
+    gridLoading: false,
+    gridController: null,
     files: [],
     issues: [],
     page: 0,
@@ -184,8 +187,12 @@
     fragment.append(details);
   }
   function render() {
-    window.GnssMap?.update(state.points);
+    window.GnssMap?.update([...state.points, ...state.gridPoints]);
     const busy = state.importing || state.converting;
+    $("grid-load-button").disabled = busy;
+    $("grid-clear-button").disabled = busy;
+    $("grid-input").disabled = busy;
+    $("grid-stop-button").hidden = !state.gridLoading;
     const total = state.points.length;
     const groups = C.groupMeasurements(state.points);
     const grouped = state.view === "grouped";
@@ -522,6 +529,179 @@
     );
     render();
   }
+
+  function selectInputTab(tab, focus = false) {
+    for (const id of ["files-tab", "grid-tab"]) {
+      const selected = id === tab;
+      $(id).setAttribute("aria-selected", String(selected));
+      $(id).tabIndex = selected ? 0 : -1;
+      $($(id).getAttribute("aria-controls")).hidden = !selected;
+    }
+    if (focus) $(tab).focus();
+    $("import-heading").lastChild.textContent =
+      tab === "grid-tab" ? " Paste your points" : " Add your files";
+  }
+
+  function showGridIssues(issues) {
+    $("grid-issues").replaceChildren(
+      ...issues.map((issue) =>
+        element(
+          "li",
+          `Line ${issue.line}${issue.name ? ` (${issue.name})` : ""}: ${issue.message}`,
+        ),
+      ),
+    );
+    $("grid-issues").hidden = !issues.length;
+  }
+
+  async function loadGridPoints() {
+    if (state.importing || state.converting) return;
+    showGridIssues([]);
+    let parsed;
+    try {
+      if ($("grid-input").value.length > 20 * 1024 * 1024)
+        throw new Error(
+          "The pasted text exceeds 20 MB. Split it into smaller sets.",
+        );
+      parsed = C.parseGridText($("grid-input").value);
+      if (parsed.issues.length) {
+        showGridIssues(parsed.issues);
+        throw new Error(
+          "Correct the rows listed below, then load again. Previously loaded points are kept.",
+        );
+      }
+    } catch (error) {
+      $("grid-status").textContent = error.message;
+      return;
+    }
+    state.gridLoading = true;
+    state.importing = true;
+    state.gridController = new AbortController();
+    const signal = state.gridController.signal;
+    const locations = new Array(parsed.points.length);
+    const issues = [];
+    let next = 0,
+      processed = 0;
+    const progress = () => {
+      $("grid-status").textContent =
+        `Locating ${processed} / ${parsed.points.length} points with LandsD… Z stays in mPD.`;
+    };
+    progress();
+    render();
+    try {
+      async function worker() {
+        while (next < parsed.points.length && !signal.aborted) {
+          const index = next++,
+            point = parsed.points[index];
+          try {
+            locations[index] = await C.requestGridLocation(point, { signal });
+          } catch (error) {
+            if (!signal.aborted)
+              issues.push({ ...point, message: error.message });
+          }
+          processed++;
+          progress();
+        }
+      }
+      await Promise.all(
+        Array.from({ length: Math.min(2, parsed.points.length) }, worker),
+      );
+      if (signal.aborted) {
+        $("grid-status").textContent =
+          "Loading stopped. Previously loaded points are kept.";
+      } else if (issues.length) {
+        showGridIssues(issues.sort((a, b) => a.line - b.line));
+        $("grid-status").textContent =
+          `${issues.length} point(s) could not be located. Previously loaded points are kept; retry after checking the rows or your connection.`;
+      } else {
+        state.gridPoints = locations;
+        $("grid-status").textContent =
+          `${locations.length} HK1980 point(s) loaded in blue. Zoomed to the pasted set. Z values and names are retained; GNSS conversion downloads contain file readings only.`;
+        render();
+        window.GnssMap?.focus(locations);
+        $("extent-heading").scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    } finally {
+      state.gridLoading = false;
+      state.importing = false;
+      state.gridController = null;
+      render();
+    }
+  }
+
+  for (const id of ["files-tab", "grid-tab"]) {
+    $(id).addEventListener("click", () => selectInputTab(id));
+    $(id).addEventListener("keydown", (event) => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key))
+        return;
+      event.preventDefault();
+      selectInputTab(
+        event.key === "Home"
+          ? "files-tab"
+          : event.key === "End"
+            ? "grid-tab"
+            : id === "files-tab"
+              ? "grid-tab"
+              : "files-tab",
+        true,
+      );
+    });
+  }
+  $("grid-load-button").addEventListener("click", loadGridPoints);
+  $("grid-stop-button").addEventListener("click", () =>
+    state.gridController?.abort(),
+  );
+  $("grid-clear-button").addEventListener("click", () => {
+    if (state.importing || state.converting) return;
+    state.gridPoints = [];
+    $("grid-input").value = "";
+    $("grid-status").textContent =
+      "Pasted points cleared. GNSS file readings are kept.";
+    showGridIssues([]);
+    render();
+  });
+  $("grid-input").addEventListener("dragover", (event) =>
+    event.preventDefault(),
+  );
+  $("grid-input").addEventListener("drop", async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (state.importing || state.converting) return;
+    const files = Array.from(event.dataTransfer.files);
+    try {
+      if (files.length) {
+        if (files.length !== 1 || !/\.(txt|csv|tsv)$/i.test(files[0].name))
+          throw new Error(
+            "Drop one TXT, CSV or TSV point file into the text box.",
+          );
+        if (files[0].size > 20 * 1024 * 1024)
+          throw new Error("This file exceeds 20 MB.");
+        // Lock other imports while decoding a dropped file.
+        state.importing = true;
+        render();
+        $("grid-input").value = await decodeFile(files[0]);
+      } else {
+        const input = $("grid-input");
+        input.setRangeText(
+          event.dataTransfer.getData("text/plain"),
+          input.selectionStart,
+          input.selectionEnd,
+          "end",
+        );
+      }
+      showGridIssues([]);
+      $("grid-status").textContent =
+        "Text ready. Check Name,N,E,Z order, then click Load & zoom to points.";
+    } catch (error) {
+      $("grid-status").textContent = error.message;
+    } finally {
+      state.importing = false;
+      render();
+    }
+  });
 
   async function convert() {
     if (state.importing || state.converting) return;

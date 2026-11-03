@@ -3,7 +3,7 @@
   "version": "1.1.0",
   "author": "Anthony Wong",
   "archive": "gnss-hk1980-converter-v1.1.0.zip",
-  "archiveSha256": "c7c85ef014cc4764b3e08ecf8b32b125afa060ba8c2f9dca47c86f4630eec901",
+  "archiveSha256": "db18e1775bb9597ad6c3e3faf9834efc19d6072700fb12c9c950cffe51fbd041",
   "files": [
     {
       "path": ".editorconfig",
@@ -27,8 +27,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "bytes": 1739,
-      "sha256": "7e62dd8dcb907171277cb3bc60b3a182ef6365573dd861a46dfe31ccf5c8e979"
+      "bytes": 1928,
+      "sha256": "4a263084dd4185dfa724090e26dbc258928d18d358462ee97e4171b1519f4ff7"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -37,8 +37,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 7273,
-      "sha256": "b8d5e41629485bf9157c64b03eb5f86afe6b571506075e20bc721acf0251c66f"
+      "bytes": 8332,
+      "sha256": "1295a4f634588fba14ccc32daf9d2f3ba2f24c1184f3d6eed108b0adf8ad2578"
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
@@ -47,28 +47,28 @@
     },
     {
       "path": "app.js",
-      "bytes": 27172,
-      "sha256": "c36996a20dbf39d15da077e3e6e720776b728fd72becca8b3ed405ca29f2876e"
+      "bytes": 33299,
+      "sha256": "721d617e7c65a3fd7f16c41a6a3da4e1e8573d0118ea036f608282a31fe54964"
     },
     {
       "path": "converter.js",
-      "bytes": 26293,
-      "sha256": "50083d523efe128ff949c879c7bc680fb54e98cfc6241091e671c9f65495a032"
+      "bytes": 30357,
+      "sha256": "d1181e0b44684ce830461a758cbc0d664168e14892b939aaddc2cb5e542c98b9"
     },
     {
       "path": "docs/GITHUB_SHARING.md",
-      "bytes": 2850,
-      "sha256": "6faeeb2b1ad1f534c016c04c591305b151a0fce64431f07e1f07e6c2091f1965"
+      "bytes": 2858,
+      "sha256": "cdf716773133fd9d03351461affa89a1557cced9a4203ff4e7bf8df6f9c26b97"
     },
     {
       "path": "docs/USER_GUIDE.html",
-      "bytes": 12998,
-      "sha256": "2dadc3e527032d4218ea83aa10015e043d804d2e7c5a217bde72cf5a8386a02a"
+      "bytes": 14578,
+      "sha256": "f936cc2bcc32b5ea893de379d8c77da9d0b3a52a13abc68fb19236cd7ec5a8d9"
     },
     {
       "path": "docs/USER_GUIDE.md",
-      "bytes": 8752,
-      "sha256": "16bf1b74214324caa0c22cef2a64df197f4972dac2f8ff70a88a7bd186106e6a"
+      "bytes": 10128,
+      "sha256": "1a799c18b860f017f395a815ceb5c2a9d18e9532695bfede15b3d6466c9195c4"
     },
     {
       "path": "docs/images/mean-export.png",
@@ -82,18 +82,18 @@
     },
     {
       "path": "index.html",
-      "bytes": 21097,
-      "sha256": "7ae1be4762a21a27e529888e1dc58502bdc7b76f9231ae2efafed7aa6da32286"
+      "bytes": 23688,
+      "sha256": "dbd4b6a1f2f2d16c40c30c42c46ea71c787b82dffe8d740dba3f041ff24c2b30"
     },
     {
       "path": "map.js",
-      "bytes": 11105,
-      "sha256": "7a021ebfb1eec65128609cb20fac4db87cc9ba865c35ff3ddbe79abf2f2e7c87"
+      "bytes": 11469,
+      "sha256": "ea96821aa52f4d95e3cb587c610b4629f49ec8ee1abc13cdd8cea9510d2ac838"
     },
     {
       "path": "package.json",
-      "bytes": 544,
-      "sha256": "3ca63ad9ea1af5b35240ac9c1c0ac869fd0eb72988cc165a5b359cba5193c989"
+      "bytes": 570,
+      "sha256": "7f12d336b2e6d57b610a49e03acdf50fc01d611f9150f60c3a9fbeeda4e922ba"
     },
     {
       "path": "samples/demo_decimal.txt",
@@ -104,6 +104,11 @@
       "path": "samples/demo_dms.txt",
       "bytes": 193,
       "sha256": "b2a8e1d7af3fd609004e4777becb7193db44dd092567026a04c07e410e5e989c"
+    },
+    {
+      "path": "samples/demo_nez.txt",
+      "bytes": 75,
+      "sha256": "a5444605fc1aa36c3371d4dc33f6b5af2b3ea8fd173c1f8ef10e0f440e0f915b"
     },
     {
       "path": "samples/demo_topcon.txt",
@@ -132,8 +137,8 @@
     },
     {
       "path": "styles.css",
-      "bytes": 25076,
-      "sha256": "75fc91de3bc8210f25659cb91a2fb6b0c16abdd20b410739ed3a543d1685d548"
+      "bytes": 25024,
+      "sha256": "441506e20db2012d804a283de1e6d4074edb20e8f02dc877850c6879d4d7be03"
     },
     {
       "path": "tests/assets.test.cjs",
@@ -144,6 +149,11 @@
       "path": "tests/converter.test.cjs",
       "bytes": 23273,
       "sha256": "2031b47fe103fd0e71aa8d0b6f3485ef6a7fbd3a6e9685c3a05d5281cd4f1bf0"
+    },
+    {
+      "path": "tests/grid-input.test.cjs",
+      "bytes": 3933,
+      "sha256": "b49a1b499fefc54416e8a50e635ad07e03493aef62a8bf6ef48ab1ebd03ee473"
     },
     {
       "path": "tests/live-api.cjs",

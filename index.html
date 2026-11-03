@@ -71,71 +71,164 @@
             </h2>
             <span class="muted small">.txt · .csv · .tsv</span>
           </div>
-          <div class="import-options">
-            <label for="angle-format">Latitude / longitude format</label>
-            <select id="angle-format" aria-describedby="angle-format-help">
-              <option value="auto">
-                Auto · decimal degrees or separated DMS
-              </option>
-              <option value="decimal">Decimal degrees · 22.32224</option>
-              <option value="dms">DMS · 22°19′20.064″ or 22 19 20.064</option>
-              <option value="packed">Packed DMS · DD.MMSS…</option>
-            </select>
-            <p id="angle-format-help">
-              Auto treats plain numbers as decimal degrees. For
-              <code>22.191234</code> meaning <code>22°19′12.34″</code>, select
-              <strong>Packed DMS</strong>. DMS is normalized to decimal degrees
-              before conversion. This choice applies to the next import; clear
-              and reimport to change existing points.
-            </p>
-          </div>
-          <label
-            class="drop-zone"
-            id="drop-zone"
-            tabindex="0"
-            role="button"
-            aria-label="Choose GNSS files or drag and drop them here"
+          <div
+            class="input-tabs"
+            role="tablist"
+            aria-label="Point input method"
           >
-            <input
-              id="file-input"
-              class="visually-hidden"
-              type="file"
-              accept=".txt,.csv,.tsv"
-              multiple
+            <button
+              id="files-tab"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              aria-controls="files-input-panel"
+            >
+              GNSS files
+            </button>
+            <button
+              id="grid-tab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="grid-input-panel"
               tabindex="-1"
-            />
-            <svg
-              class="upload-icon"
-              viewBox="0 0 48 48"
-              fill="none"
-              aria-hidden="true"
             >
-              <path
-                d="M14 33H10a6 6 0 0 1-1-12 13 13 0 0 1 25-4 8 8 0 0 1 3 16h-3"
-              />
-              <path d="M24 39V23m-6 6 6-6 6 6" />
-            </svg>
-            <strong>Drag &amp; drop GNSS files here</strong
-            ><span>or <span class="browse-link">browse files</span></span>
-            <span class="drop-note"
-              >Multiple files welcome · Original exports stay unchanged</span
-            >
-          </label>
-          <div class="import-footer">
-            <span
-              >Point name, latitude, longitude &amp; elevation · date/time kept
-              for playback.</span
-            ><button id="example-button" class="text-button" type="button">
-              Load manual example <span aria-hidden="true">↗</span>
+              Paste N,E,Z
             </button>
           </div>
-          <ul id="file-list" class="file-list" aria-label="Imported files"></ul>
-          <p
-            id="format-summary"
-            class="format-summary"
-            role="status"
+          <div
+            id="files-input-panel"
+            role="tabpanel"
+            aria-labelledby="files-tab"
+          >
+            <div class="import-options">
+              <label for="angle-format">Latitude / longitude format</label>
+              <select id="angle-format" aria-describedby="angle-format-help">
+                <option value="auto">
+                  Auto · decimal degrees or separated DMS
+                </option>
+                <option value="decimal">Decimal degrees · 22.32224</option>
+                <option value="dms">DMS · 22°19′20.064″ or 22 19 20.064</option>
+                <option value="packed">Packed DMS · DD.MMSS…</option>
+              </select>
+              <p id="angle-format-help">
+                Auto treats plain numbers as decimal degrees. For
+                <code>22.191234</code> meaning <code>22°19′12.34″</code>, select
+                <strong>Packed DMS</strong>. DMS is normalized to decimal
+                degrees before conversion. This choice applies to the next
+                import; clear and reimport to change existing points.
+              </p>
+            </div>
+            <label
+              class="drop-zone"
+              id="drop-zone"
+              tabindex="0"
+              role="button"
+              aria-label="Choose GNSS files or drag and drop them here"
+            >
+              <input
+                id="file-input"
+                class="visually-hidden"
+                type="file"
+                accept=".txt,.csv,.tsv"
+                multiple
+                tabindex="-1"
+              />
+              <svg
+                class="upload-icon"
+                viewBox="0 0 48 48"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M14 33H10a6 6 0 0 1-1-12 13 13 0 0 1 25-4 8 8 0 0 1 3 16h-3"
+                />
+                <path d="M24 39V23m-6 6 6-6 6 6" />
+              </svg>
+              <strong>Drag &amp; drop GNSS files here</strong
+              ><span>or <span class="browse-link">browse files</span></span>
+              <span class="drop-note"
+                >Multiple files welcome · Original exports stay unchanged</span
+              >
+            </label>
+            <div class="import-footer">
+              <span
+                >Point name, latitude, longitude &amp; elevation · date/time
+                kept for playback.</span
+              ><button id="example-button" class="text-button" type="button">
+                Load manual example <span aria-hidden="true">↗</span>
+              </button>
+            </div>
+            <ul
+              id="file-list"
+              class="file-list"
+              aria-label="Imported files"
+            ></ul>
+            <p
+              id="format-summary"
+              class="format-summary"
+              role="status"
+              hidden
+            ></p>
+          </div>
+          <div
+            id="grid-input-panel"
+            role="tabpanel"
+            aria-labelledby="grid-tab"
             hidden
-          ></p>
+          >
+            <p class="grid-help" id="grid-input-help">
+              <strong>HK1980 Grid · Name, Northing, Easting, Z (mPD)</strong
+              ><br />Paste one point per line, or drop a TXT/CSV file into this
+              box. Commas, tabs and spaces work; the header is optional. Z stays
+              as entered. LandsD locates N/E on the map; your point names are
+              kept in this browser.
+            </p>
+            <label for="grid-input">Paste or type your points</label>
+            <textarea
+              id="grid-input"
+              rows="7"
+              wrap="off"
+              spellcheck="false"
+              aria-describedby="grid-input-help"
+              placeholder="Name,N,E,Z&#10;P1,820358.910,832590.508,26.009&#10;P2,820458.910,832690.508,27.000"
+            ></textarea>
+            <div class="grid-actions">
+              <button
+                id="grid-load-button"
+                type="button"
+                class="button primary"
+              >
+                Load &amp; zoom to points
+              </button>
+              <button
+                id="grid-stop-button"
+                type="button"
+                class="button ghost"
+                hidden
+              >
+                Stop
+              </button>
+              <button id="grid-clear-button" type="button" class="button ghost">
+                Clear pasted points
+              </button>
+            </div>
+            <p
+              id="grid-status"
+              class="grid-help"
+              role="status"
+              aria-live="polite"
+            >
+              Pasted points appear in blue. Loading replaces the previous pasted
+              set; GNSS file readings stay in place.
+            </p>
+            <ul
+              id="grid-issues"
+              class="grid-errors"
+              aria-label="Pasted point issues"
+              hidden
+            ></ul>
+          </div>
         </section>
 
         <aside class="panel method-panel" aria-labelledby="method-heading">
@@ -166,9 +259,9 @@
             Standard exports use <strong>Elevation</strong>; Topcon exports use
             <strong>84H</strong> for WGS84 ellipsoidal height, with
             <strong>B</strong> as latitude and <strong>L</strong> as longitude.
-            Topcon’s Elevation and E/N/Z, and a standard export’s separate Height,
-            are ignored. Do not supply existing mPD or orthometric height as
-            ellipsoidal height.
+            Topcon’s Elevation and E/N/Z, and a standard export’s separate
+            Height, are ignored. Do not supply existing mPD or orthometric
+            height as ellipsoidal height.
           </p>
           <a
             class="reference-link"
@@ -291,6 +384,8 @@
             </dl>
             <p class="map-legend">
               <span class="legend-point" aria-hidden="true"></span> Imported
+              readings
+              <span class="legend-pasted" aria-hidden="true"></span> Pasted
               points <span class="legend-box" aria-hidden="true"></span> Data
               bounds
             </p>

@@ -40,6 +40,24 @@ Try `samples/demo_decimal.txt` (six synthetic readings of two points), `samples/
 
 ## 4. Review groups and counts
 
+### Paste HK1980 grid points directly
+
+In **Add your files**, choose the **Paste N,E,Z** tab to open the writable input box. Paste or type one point per line, or drag a TXT/CSV/TSV file into the box:
+
+```text
+Name,N,E,Z
+P1,820358.910,832590.508,26.009
+P2,820458.910,832690.508,27.000
+```
+
+The header is optional. Use **Name, Northing, Easting, Z** in that order; all coordinates are metres in HK1980 Grid and Z is kept in mPD. Commas, spreadsheet tabs, spaces and semicolons work. For names containing spaces, use comma/tab separated rows; CSV names containing commas must be quoted. A header with Easting before Northing is rejected so that you can reorder it explicitly.
+
+Click **Load & zoom to points**. LandsD locates N/E for the OSM map; your names and Z values stay in the browser. The map shows these points in blue and zooms to their area. Internet access is required. Clicking a point displays its original N/E/Z and name. Try `samples/demo_nez.txt`.
+
+Loading a new set replaces the previous pasted set. Invalid rows, failed requests or **Stop** preserve the earlier set; correct the listed rows or retry. **Clear pasted points** removes only this set. Receiver readings remain visible in green; **Fit all points** includes both sets. Pasted points stay separate from receiver statistics and conversion downloads.
+
+### Review receiver measurements
+
 `SC43.1`, `SC43.2`, `SC43.3` share unique point ID **SC43**. Only a final dot followed by digits is removed; IDs are case-sensitive. `AREA.SC43.003` becomes point `AREA.SC43`, measurement index `003`.
 
 The page distinguishes unique points from imported measurements. Expand a point, use Expand all / Collapse all, or select All measurements. Same-named readings, including duplicates within one file, are retained separately. For example, `2098.010.1` and `2098.010.2` belong to **2098.010**. Measurements CSV/JSON preserves each original name, group ID, unique Record ID, source file/line, receiver format and recorded time, including Topcon's original timestamp.

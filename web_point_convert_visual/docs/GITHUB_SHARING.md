@@ -16,7 +16,7 @@ For Git command-line use, initialize the folder, add files, commit, then add you
 
 ## Commit with GitHub Desktop
 
-For this existing clone, use **File → Add local repository** and select `J:\001_workat_ESL\R&D\web_conversion\gnsspoint_master`. Its parent `web_conversion` folder is a workspace containing the repository and original survey files; select the `gnsspoint_master` folder in GitHub Desktop.
+For this existing clone, use **File → Add local repository** and select `J:\001_workat_ESL\ResearchDev\web_conversion\gnsspoint_master`. Its parent `web_conversion` folder is a workspace containing the repository and original survey files; select the `gnsspoint_master` folder in GitHub Desktop.
 
 1. Review the **Changes** tab. The updated `web_point_convert_visual/` files are inside this repository and include the Topcon/Sino importer, guide, sample and checks.
 2. Enter a summary such as **Update Topcon/Sino support in local website copies**.

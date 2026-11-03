@@ -343,7 +343,7 @@
     return records;
   }
 
-  function validatePoint(point) {
+  function validatePoint(point, { positionOnly = false } = {}) {
     if (!point.name || !point.name.trim()) return "Point name is empty.";
     if (
       Number(point.lat) >= 113.82 &&
@@ -355,7 +355,7 @@
     for (const [key, label, min, max] of [
       ["lat", "Latitude", 22.13, 22.57],
       ["long", "Longitude", 113.82, 114.48],
-      ["elevation", "Elevation", -1000, 10000],
+      ...(positionOnly ? [] : [["elevation", "Elevation", -1000, 10000]]),
     ]) {
       const value = String(point[key] ?? "").trim();
       if (
@@ -502,6 +502,112 @@
     return `${ENDPOINT}?${params}`;
   }
 
+  function validateGridPoint(point) {
+    if (!point.name?.trim()) return "Point name is empty.";
+    for (const [key, label, min, max] of [
+      ["northing", "Northing", 799000, 848000],
+      ["easting", "Easting", 799500, 867500],
+      ["z", "Z / mPD", -Infinity, Infinity],
+    ]) {
+      const value = String(point[key] ?? "").trim();
+      if (!NUMBER.test(value) || !Number.isFinite(Number(value)))
+        return `${label} must be a finite number.`;
+      if (Number(value) < min || Number(value) > max)
+        return `${label} must be between ${min} and ${max} metres in HK1980 Grid. Check the N/E order.`;
+    }
+    return null;
+  }
+
+  function parseGridText(input) {
+    const text = String(input).replace(/^\uFEFF/, "");
+    if (!text.trim()) throw new Error("Paste at least one Name,N,E,Z row.");
+    const first = text.split(/\r\n|\n|\r/).find((line) => line.trim());
+    const delimiter = [",", "\t", ";"].find((value) => first.includes(value));
+    const records = delimiter
+      ? parseDelimited(text, delimiter)
+      : text
+          .split(/\r\n|\n|\r/)
+          .flatMap((line, index) =>
+            line.trim()
+              ? [{ cells: line.trim().split(/\s+/), line: index + 1 }]
+              : [],
+          );
+    const header = records[0].cells.map(normalize);
+    const hasHeader =
+      ["name", "pointname", "id", "pointid"].includes(header[0]) &&
+      header
+        .slice(1)
+        .some((value) =>
+          ["n", "northing", "e", "easting", "z", "mpd"].includes(value),
+        );
+    if (
+      hasHeader &&
+      (header.length !== 4 ||
+        !["n", "northing"].includes(header[1]) ||
+        !["e", "easting"].includes(header[2]) ||
+        !["z", "mpd", "height", "elevation"].includes(header[3]))
+    )
+      throw new Error(
+        "Use Name,N,E,Z order (Northing before Easting), including in the header.",
+      );
+    const rows = hasHeader ? records.slice(1) : records;
+    if (!rows.length) throw new Error("The header has no point rows below it.");
+    const points = [],
+      issues = [];
+    for (const row of rows) {
+      const [name = "", northing = "", easting = "", z = ""] = row.cells.map(
+        (value) => value.trim(),
+      );
+      const point = { name, northing, easting, z, line: row.line };
+      const message =
+        row.cells.length !== 4
+          ? `Expected 4 columns in Name,N,E,Z order; found ${row.cells.length}.`
+          : validateGridPoint(point);
+      if (message) issues.push({ line: row.line, name, message });
+      else points.push(point);
+    }
+    return { points, issues };
+  }
+
+  async function requestGridLocation(point, options = {}) {
+    const problem = validateGridPoint(point);
+    if (problem) throw new Error(problem);
+    // Plot horizontally; Z stays in mPD and is never sent as WGS84 height.
+    const params = new URLSearchParams({
+      inSys: "hkgrid",
+      outSys: "wgsgeog",
+      n: point.northing,
+      e: point.easting,
+      outUnit: "decDeg",
+    });
+    return requestTransform(
+      `${ENDPOINT}?${params}`,
+      (data) => {
+        if (data?.ErrorCode !== undefined) validateResponse(data);
+        if (
+          typeof data?.wgsLat !== "number" ||
+          typeof data?.wgsLong !== "number"
+        )
+          throw new Error("LandsD did not return a valid WGS84 map position.");
+        const position = {
+          name: point.name,
+          lat: String(data.wgsLat),
+          long: String(data.wgsLong),
+        };
+        const invalid = validatePoint(position, { positionOnly: true });
+        if (invalid) throw new Error(invalid);
+        return {
+          ...position,
+          pointId: point.name,
+          mapOnly: true,
+          gridInput: { ...point },
+          source: "Pasted HK1980 points",
+        };
+      },
+      options,
+    );
+  }
+
   function coordinateBounds(points) {
     if (!points.length) return null;
     const bounds = {
@@ -511,7 +617,7 @@
       east: -Infinity,
     };
     for (const point of points) {
-      if (validatePoint(point))
+      if (validatePoint(point, { positionOnly: point.mapOnly === true }))
         throw new Error(
           "Map bounds require valid, normalized WGS84 coordinates.",
         );
@@ -539,8 +645,13 @@
     return { hkN: data.hkN, hkE: data.hkE, hkpd: data.hkpd };
   }
 
-  async function requestConversion(
-    point,
+  async function requestConversion(point, options = {}) {
+    return requestTransform(buildUrl(point), validateResponse, options);
+  }
+
+  async function requestTransform(
+    url,
+    validate,
     { signal, fetchImpl = globalThis.fetch, timeoutMs = 30000 } = {},
   ) {
     const controller = new AbortController();
@@ -553,7 +664,7 @@
       controller.abort();
     }, timeoutMs);
     try {
-      const response = await fetchImpl(buildUrl(point), {
+      const response = await fetchImpl(url, {
         signal: controller.signal,
         credentials: "omit",
       });
@@ -568,7 +679,7 @@
         if (controller.signal.aborted) throw error;
         throw new Error("LandsD returned a response that is not valid JSON.");
       }
-      return validateResponse(data);
+      return validate(data);
     } catch (error) {
       if (timedOut)
         throw new Error(
@@ -778,6 +889,8 @@
     parseAngle,
     parseDelimited,
     parseExport,
+    parseGridText,
+    requestGridLocation,
     validatePoint,
     buildUrl,
     coordinateBounds,

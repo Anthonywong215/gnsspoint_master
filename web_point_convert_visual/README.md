@@ -18,6 +18,18 @@ A local website for preparing GNSS exports, converting individual WGS84 readings
 
 Read the [user guide](docs/USER_GUIDE.md), or open the [printable HTML guide](docs/USER_GUIDE.html) in a browser. Opening `index.html` directly supports import, conversion and point overlays; use the launcher for the OSM background.
 
+### Paste HK1980 points onto the map
+
+Select **Paste N,E,Z**, type or paste one `Name,Northing,Easting,Z` row per line, then click **Load & zoom to points**. You can also drop a TXT/CSV/TSV file into the writable text box. The optional header is `Name,N,E,Z`; Northing comes before Easting. Commas, tabs, spaces and semicolons are supported. Try [samples/demo_nez.txt](samples/demo_nez.txt).
+
+```text
+Name,N,E,Z
+P1,820358.910,832590.508,26.009
+P2,820458.910,832690.508,27.000
+```
+
+These inputs are **HK1980 Grid coordinates in metres**, with Z retained in mPD. LandsD converts N/E to WGS84 map positions; Z is kept as entered. Internet access is required. Pasted points appear in blue alongside green GNSS readings. Loading replaces the previous pasted set and zooms to that set; **Fit all points** includes both. Invalid rows or failed/stopped lookups keep the previous set in place. The separate **Clear pasted points** button removes only the pasted set. GNSS conversion downloads and mean calculations continue to use receiver readings only.
+
 ### Using a Git clone
 
 Launch `start.cmd` or `npm start` from the repository root. Keep `vendor/leaflet/` beside the root `index.html`: it supplies the local map script and stylesheet. The `docs/`, `samples/`, `scripts/` and `tests/` folders also belong at that root. The `web_point_convert_visual/` copy includes the same Topcon/Sino import support and can also be launched from its own folder. The repository root is the main source for future edits.

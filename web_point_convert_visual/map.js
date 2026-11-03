@@ -12,13 +12,14 @@
     revealed = 0,
     timer = null;
 
-  function fit() {
-    if (map && bounds) {
+  function fit(points) {
+    const target = Array.isArray(points) ? C.coordinateBounds(points) : bounds;
+    if (map && target) {
       map.invalidateSize();
       map.fitBounds(
         [
-          [bounds.south, bounds.west],
-          [bounds.north, bounds.east],
+          [target.south, target.west],
+          [target.north, target.east],
         ],
         { padding: [32, 32], maxZoom: 18, animate: false },
       );
@@ -80,9 +81,13 @@
     const title = document.createElement("strong");
     title.textContent = point.name;
     const identity = document.createElement("p");
-    identity.textContent = `Point ID: ${point.pointId ?? C.pointIdentity(point.name).pointId} · measurement ${point.measurementIndex ?? C.pointIdentity(point.name).measurementIndex ?? "unnumbered"}`;
+    identity.textContent = point.mapOnly
+      ? "Pasted HK1980 point · original name and Z retained"
+      : `Point ID: ${point.pointId ?? C.pointIdentity(point.name).pointId} · measurement ${point.measurementIndex ?? C.pointIdentity(point.name).measurementIndex ?? "unnumbered"}`;
     const coordinates = document.createElement("p");
-    coordinates.textContent = `WGS84 ${point.lat}°, ${point.long}°`;
+    coordinates.textContent = point.mapOnly
+      ? `HK1980 N ${point.gridInput.northing}, E ${point.gridInput.easting}, Z ${point.gridInput.z} mPD · WGS84 map position ${point.lat}°, ${point.long}°`
+      : `WGS84 ${point.lat}°, ${point.long}°`;
     const time = document.createElement("p");
     time.textContent = recordedTime(point);
     const source = document.createElement("small");
@@ -90,9 +95,9 @@
     popup.append(title, identity, coordinates, time, source);
     L.circleMarker([Number(point.lat), Number(point.long)], {
       radius: 4,
-      color: "#17664d",
+      color: point.mapOnly ? "#216baf" : "#17664d",
       weight: 1,
-      fillColor: "#308969",
+      fillColor: point.mapOnly ? "#438bca" : "#308969",
       fillOpacity: 0.65,
     })
       .bindPopup(popup)
@@ -199,7 +204,7 @@
     $("map-empty").hidden = !!bounds;
     $("mini-map").hidden = !bounds;
     $("map-point-count").textContent = bounds
-      ? `${uniqueCount.toLocaleString()} unique points · ${points.length.toLocaleString()} measurements · all files`
+      ? `${uniqueCount.toLocaleString()} unique points · ${points.length.toLocaleString()} map points / readings${points.some((point) => point.mapOnly) ? ` · ${points.filter((point) => point.mapOnly).length} pasted` : " · all files"}`
       : "Import points to see their location and bounding box.";
     for (const key of ["north", "south", "east", "west"])
       $("bound-" + key).textContent = bounds
@@ -246,7 +251,7 @@
         });
         tiles.on("load", () => {
           $("map-status").textContent =
-            "OpenStreetMap background · green points: observations · orange ring: current playback point · dashed rectangle: full data bounds.";
+            "OpenStreetMap background · green: GNSS readings · blue: pasted HK1980 points · orange ring: playback · dashed rectangle: full data bounds.";
         });
       }
       boundsLayer = L.layerGroup().addTo(map);
@@ -270,7 +275,7 @@
     showAll();
     $("map-status").textContent = localFile
       ? "Points and bounds are shown. Double-click start.cmd to open this website with the OpenStreetMap background, then import your files there."
-      : "OpenStreetMap background · green points: observations · orange ring: current playback point · dashed rectangle: full data bounds.";
+      : "OpenStreetMap background · green: GNSS readings · blue: pasted HK1980 points · orange ring: playback · dashed rectangle: full data bounds.";
     if (bounds.north === bounds.south && bounds.east === bounds.west)
       $("map-status").textContent +=
         " All points share one location; the bounding box has zero area.";
@@ -291,5 +296,8 @@
     if (phase === "playing") scheduleNext();
   });
   window.addEventListener("pagehide", stopTimer);
-  window.GnssMap = { update, fit };
+  function focus(points) {
+    requestAnimationFrame(() => requestAnimationFrame(() => fit(points)));
+  }
+  window.GnssMap = { update, fit, focus };
 })();

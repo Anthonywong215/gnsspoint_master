@@ -37,6 +37,15 @@
 <p>Supported separators are comma, tab and semicolon. UTF-8 and UTF-16 with a byte-order mark work. Each file is limited to 20 MB. Accepted ranges: latitude 22.13–22.57°, longitude 113.82–114.48°, elevation −1000–10000 m. Importing a file again adds its readings again.</p>
 <p>Try <code>samples/demo_decimal.txt</code> (six synthetic readings of two points), <code>samples/demo_dms.txt</code> (two DMS forms of the public manual example), or <code>samples/demo_topcon.txt</code> (Topcon headings, timestamps and repeated names). These are demonstrations, not field measurements.</p>
 <h2 id="4-review-groups-and-counts">4. Review groups and counts</h2>
+<h3 id="paste-hk1980-grid-points-directly">Paste HK1980 grid points directly</h3>
+<p>In <strong>Add your files</strong>, choose the <strong>Paste N,E,Z</strong> tab to open the writable input box. Paste or type one point per line, or drag a TXT/CSV/TSV file into the box:</p>
+<pre><code>Name,N,E,Z
+P1,820358.910,832590.508,26.009
+P2,820458.910,832690.508,27.000</code></pre>
+<p>The header is optional. Use <strong>Name, Northing, Easting, Z</strong> in that order; all coordinates are metres in HK1980 Grid and Z is kept in mPD. Commas, spreadsheet tabs, spaces and semicolons work. For names containing spaces, use comma/tab separated rows; CSV names containing commas must be quoted. A header with Easting before Northing is rejected so that you can reorder it explicitly.</p>
+<p>Click <strong>Load &amp; zoom to points</strong>. LandsD locates N/E for the OSM map; your names and Z values stay in the browser. The map shows these points in blue and zooms to their area. Internet access is required. Clicking a point displays its original N/E/Z and name. Try <code>samples/demo_nez.txt</code>.</p>
+<p>Loading a new set replaces the previous pasted set. Invalid rows, failed requests or <strong>Stop</strong> preserve the earlier set; correct the listed rows or retry. <strong>Clear pasted points</strong> removes only this set. Receiver readings remain visible in green; <strong>Fit all points</strong> includes both sets. Pasted points stay separate from receiver statistics and conversion downloads.</p>
+<h3 id="review-receiver-measurements">Review receiver measurements</h3>
 <p><code>SC43.1</code>, <code>SC43.2</code>, <code>SC43.3</code> share unique point ID <strong>SC43</strong>. Only a final dot followed by digits is removed; IDs are case-sensitive. <code>AREA.SC43.003</code> becomes point <code>AREA.SC43</code>, measurement index <code>003</code>.</p>
 <p>The page distinguishes unique points from imported measurements. Expand a point, use Expand all / Collapse all, or select All measurements. Same-named readings, including duplicates within one file, are retained separately. For example, <code>2098.010.1</code> and <code>2098.010.2</code> belong to <strong>2098.010</strong>. Measurements CSV/JSON preserves each original name, group ID, unique Record ID, source file/line, receiver format and recorded time, including Topcon's original timestamp.</p>
 <h2 id="5-map-and-collection-playback">5. Map and collection playback</h2>

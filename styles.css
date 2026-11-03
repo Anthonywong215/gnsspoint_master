@@ -19,7 +19,8 @@ body {
   margin: 0;
 }
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 button,
@@ -50,6 +51,83 @@ button:not(:disabled):hover {
 }
 [hidden] {
   display: none !important;
+}
+.input-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  margin-bottom: 20px;
+  border-radius: 9px;
+  background: #edf2ed;
+}
+.input-tabs [role="tab"] {
+  flex: 1;
+  min-height: 44px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 17px;
+}
+.input-tabs [aria-selected="true"] {
+  background: var(--green);
+  color: white;
+  font-weight: 650;
+}
+.grid-help {
+  font-size: 16px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+#grid-input-panel > label {
+  display: block;
+  margin: 16px 0 8px;
+  font-size: 17px;
+  font-weight: 600;
+}
+#grid-input {
+  display: block;
+  width: 100%;
+  min-height: 190px;
+  resize: vertical;
+  padding: 14px;
+  border: 1px solid #b8ccba;
+  border-radius: 8px;
+  background: #fbfdfb;
+  color: var(--ink);
+  font: 16px/1.7 var(--mono);
+}
+.grid-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.grid-actions .button {
+  margin: 0;
+  font-size: 16px;
+}
+@media (max-width: 760px) {
+  .grid-actions .button {
+    flex: 1 1 100%;
+  }
+}
+.grid-errors {
+  padding-left: 22px;
+  max-height: 180px;
+  overflow: auto;
+  color: #a53d32;
+  font-size: 16px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.legend-pasted {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #438bca;
+  margin: 0 5px 0 12px;
 }
 .topbar {
   height: 76px;
