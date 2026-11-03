@@ -192,6 +192,7 @@
     $("grid-load-button").disabled = busy;
     $("grid-clear-button").disabled = busy;
     $("grid-input").disabled = busy;
+    $("grid-column-order").disabled = busy;
     $("grid-stop-button").hidden = !state.gridLoading;
     const total = state.points.length;
     const groups = C.groupMeasurements(state.points);
@@ -554,9 +555,9 @@
           ? `"${String(value).replace(/"/g, '""')}"`
           : String(value);
       $("grid-input").value = [
-        "Name,N,E,Z",
+        "ID,Easting,Northing,mPD",
         ...gridPoints.map((point) =>
-          [point.name, point.northing, point.easting, point.z]
+          [point.name, point.easting, point.northing, point.z]
             .map(cell)
             .join(","),
         ),
@@ -602,7 +603,11 @@
         throw new Error(
           "The pasted text exceeds 20 MB. Split it into smaller sets.",
         );
-      parsed = options.parsed || C.parseGridText($("grid-input").value);
+      parsed =
+        options.parsed ||
+        C.parseGridText($("grid-input").value, {
+          order: $("grid-column-order").value,
+        });
       if (parsed.issues.length) {
         showGridIssues(parsed.issues);
         throw new Error(
@@ -690,6 +695,13 @@
     });
   }
   $("grid-load-button").addEventListener("click", loadGridPoints);
+  $("grid-column-order").addEventListener("change", () => {
+    const eastFirst = $("grid-column-order").value === "EN";
+    $("grid-order-help").textContent =
+      `Headings override this selection. Without headings, the first number is ${eastFirst ? "Easting" : "Northing"} and the second is ${eastFirst ? "Northing" : "Easting"}. Both orders can fall inside HK80 ranges, so the numbers alone cannot identify the order.`;
+    $("grid-status").textContent =
+      `Column order set to ${eastFirst ? "ID, Easting, Northing, mPD" : "ID, Northing, Easting, mPD"}. Click Load & zoom to points to apply it to the pasted text.`;
+  });
   $("grid-stop-button").addEventListener("click", () =>
     state.gridController?.abort(),
   );
@@ -733,7 +745,7 @@
       }
       showGridIssues([]);
       $("grid-status").textContent =
-        "Text ready. Named headings determine EN/NE order. Without a header, use Name,N,E,Z. Click Load & zoom to points.";
+        "Text ready. Named headings determine EN/NE order. Without a header, check the column-order selector. Click Load & zoom to points.";
     } catch (error) {
       $("grid-status").textContent = error.message;
     } finally {

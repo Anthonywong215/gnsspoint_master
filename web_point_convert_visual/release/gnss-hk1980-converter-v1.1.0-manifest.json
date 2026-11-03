@@ -3,7 +3,7 @@
   "version": "1.1.0",
   "author": "Anthony Wong",
   "archive": "gnss-hk1980-converter-v1.1.0.zip",
-  "archiveSha256": "cb29ee2668621601cc7031b04bbfcdb0ab9ca7819b20aa66b4db26b33515962f",
+  "archiveSha256": "0b97a746c207e35e4e2668ff020420cc3648573405aebce8cf171437ff218476",
   "files": [
     {
       "path": ".editorconfig",
@@ -27,8 +27,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "bytes": 2312,
-      "sha256": "276bcb128372887a6bfa3bc52450efb69a6d1b6247cc9b22f27d10fa7aea6617"
+      "bytes": 2488,
+      "sha256": "b99d7a12c1e14469bfe315a4ff7717bcb4eec777ac7e8b158faa3ac54bd2a461"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -37,8 +37,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 9094,
-      "sha256": "87222827e4327ce9d4a633cf38c18f1c1ade3c6d20613870ca03cb7878672c6f"
+      "bytes": 9321,
+      "sha256": "5301be03bc4e328e746fddd6600ca2dba16c7d2019b7c0197c4ebb444c905b2e"
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
@@ -47,13 +47,13 @@
     },
     {
       "path": "app.js",
-      "bytes": 34826,
-      "sha256": "50f99c0dd5b6577d333b8695ad4a93b4ca5ec784efb9b7c0a386a9aa999405b9"
+      "bytes": 35607,
+      "sha256": "eab3e751681a3b3781b7589835ca72644c9b3f69454ddd4ac00ed111d335c7bf"
     },
     {
       "path": "converter.js",
-      "bytes": 32456,
-      "sha256": "7c0fb4d5902f11e4bf8350fbd9cf493368ffb2303b49bb3d91fbe3ebab75d320"
+      "bytes": 32708,
+      "sha256": "8681d9607aca8bab1f9d6747210f054a9904b7514ce9a7823ec072b2588e8881"
     },
     {
       "path": "docs/GITHUB_SHARING.md",
@@ -62,13 +62,13 @@
     },
     {
       "path": "docs/USER_GUIDE.html",
-      "bytes": 16058,
-      "sha256": "f86847690198d8a83ca611f81057c1b9ba98fb650ba81ed22372ca3dae87676d"
+      "bytes": 16352,
+      "sha256": "f5a5d32faf363c8d2f1d048160d219c10a8043044c70fbd6699c1d2d42637aec"
     },
     {
       "path": "docs/USER_GUIDE.md",
-      "bytes": 11391,
-      "sha256": "cf020748bd276b4050ae119d7933c8e26811f92fa8feea1affca253a53d26b2a"
+      "bytes": 11659,
+      "sha256": "4a50d9a5f22e3a1103e2cd0815c4d7e47ff85be9fca0502871e4a8b246aeb861"
     },
     {
       "path": "docs/images/mean-export.png",
@@ -82,8 +82,8 @@
     },
     {
       "path": "index.html",
-      "bytes": 24633,
-      "sha256": "06e5381518f0931ae628dde00fb4500cddc5bfb28da5d472f849a648e9f6a3a2"
+      "bytes": 25499,
+      "sha256": "dcaacba6eca4f4e20da4e50376ab200412c6402219938aeaf3d0f076d0da0c0d"
     },
     {
       "path": "map.js",
@@ -152,8 +152,8 @@
     },
     {
       "path": "tests/grid-input.test.cjs",
-      "bytes": 6196,
-      "sha256": "5244b8bf2c8d1cb0af025bbd3b8d2226dbabb83f83ec28be67fe2e2c6fd22835"
+      "bytes": 7472,
+      "sha256": "29268f94b6c8963bbfc5ce6ee4555489649614eff1d3927635225837ab450951"
     },
     {
       "path": "tests/live-api.cjs",

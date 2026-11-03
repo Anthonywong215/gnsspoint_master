@@ -588,7 +588,9 @@
     );
   }
 
-  function parseGridText(input) {
+  function parseGridText(input, { order = "NE" } = {}) {
+    if (!["EN", "NE"].includes(order))
+      throw new Error("Choose EN or NE column order.");
     const records = gridRecords(input);
     const header = records[0].cells.map(normalize);
     const hasHeader =
@@ -600,7 +602,12 @@
           ...GRID_ALIASES.z,
         ].includes(value),
       );
-    const columns = { name: 0, northing: 1, easting: 2, z: 3 };
+    const columns = {
+      name: 0,
+      northing: order === "EN" ? 2 : 1,
+      easting: order === "EN" ? 1 : 2,
+      z: 3,
+    };
     if (hasHeader) {
       for (const [key, aliases] of Object.entries(GRID_ALIASES)) {
         const matches = header.flatMap((value, index) =>
@@ -627,7 +634,7 @@
         point[key] = (row.cells[index] ?? "").trim();
       const message =
         row.cells.length !== (hasHeader ? header.length : 4)
-          ? `Expected ${hasHeader ? header.length : 4} columns${hasHeader ? " to match the header" : " in Name,N,E,Z order"}; found ${row.cells.length}.`
+          ? `Expected ${hasHeader ? header.length : 4} columns${hasHeader ? " to match the header" : ` in ${order === "EN" ? "ID,Easting,Northing,mPD" : "ID,Northing,Easting,mPD"} order`}; found ${row.cells.length}.`
           : validateGridPoint(point);
       if (message) issues.push({ line: row.line, name: point.name, message });
       else points.push(point);

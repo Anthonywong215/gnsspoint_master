@@ -93,7 +93,7 @@
               aria-controls="grid-input-panel"
               tabindex="-1"
             >
-              Paste N,E,Z
+              Paste coordinates
             </button>
           </div>
           <div
@@ -178,14 +178,32 @@
             hidden
           >
             <p class="grid-help" id="grid-input-help">
-              <strong>HK1980 Grid · Name, Northing, Easting, Z (mPD)</strong
+              <strong>HK1980 Grid · coordinates + height in mPD</strong
               ><br />Paste one point per line, or drop a TXT/CSV file into this
               box. Website exports such as ID,Easting,Northing,mPD work too.
               Headers determine column order; ID or Name and mPD, Height or Z
-              are accepted. Without a header, use Name,N,E,Z. Z stays as
-              entered. Existing HK80 coordinates are checked and plotted; LandsD
-              locates N/E on the map. Your point names stay in this browser.
+              are accepted. Without a header, select the column order below;
+              Easting first is the default. Z stays as entered. Existing HK80
+              coordinates are checked and plotted; LandsD locates N/E on the
+              map. Your point names stay in this browser.
             </p>
+            <div class="import-options">
+              <label for="grid-column-order"
+                >Column order without a header</label
+              >
+              <select id="grid-column-order" aria-describedby="grid-order-help">
+                <option value="EN" selected>
+                  ID, Easting, Northing, mPD (TXYZ)
+                </option>
+                <option value="NE">ID, Northing, Easting, mPD</option>
+              </select>
+              <p id="grid-order-help">
+                Headings override this selection. Without headings, the first
+                number is Easting and the second is Northing. Both orders can
+                fall inside HK80 ranges, so the numbers alone cannot identify
+                the order.
+              </p>
+            </div>
             <label for="grid-input">Paste or type your points</label>
             <textarea
               id="grid-input"
@@ -193,7 +211,7 @@
               wrap="off"
               spellcheck="false"
               aria-describedby="grid-input-help"
-              placeholder="Name,N,E,Z&#10;P1,820358.910,832590.508,26.009&#10;P2,820458.910,832690.508,27.000"
+              placeholder="ID,Easting,Northing,mPD&#10;P1,832590.508,820358.910,26.009&#10;P2,832690.508,820458.910,27.000"
             ></textarea>
             <div class="grid-actions">
               <button

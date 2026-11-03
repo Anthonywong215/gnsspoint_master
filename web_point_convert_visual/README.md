@@ -20,7 +20,7 @@ Read the [user guide](docs/USER_GUIDE.md), or open the [printable HTML guide](do
 
 ### Paste HK1980 points onto the map
 
-Select **Paste N,E,Z**, type or paste coordinates, then click **Load & zoom to points**. You can also drop a TXT/CSV/TSV file into the writable text box. With headings, column order is detected: both `ID,Easting,Northing,mPD` (the website's default Results CSV) and `ID,Northing,Easting,Height` work. `Name`/`ID` and `Z`/`mPD`/`Height`/`Elevation` are accepted. Without a header, use `Name,Northing,Easting,Z` order. Commas, tabs, spaces and semicolons are supported. Try [samples/demo_nez.txt](samples/demo_nez.txt).
+Select **Paste coordinates**, type or paste coordinates, then click **Load & zoom to points**. You can also drop a TXT/CSV/TSV file into the writable text box. With headings, column order is detected: both `ID,Easting,Northing,mPD` (the website's default Results CSV) and `ID,Northing,Easting,Height` work. `Name`/`ID` and `Z`/`mPD`/`Height`/`Elevation` are accepted. **Without a header, the default is ID,Easting,Northing,mPD (TXYZ).** Use the **Column order without a header** selector for Northing-first rows. Headings always override this selector. Both numeric orders can pass HK80 range checks, so the app does not guess from the values. Commas, tabs, spaces and semicolons are supported. Try [samples/demo_nez.txt](samples/demo_nez.txt).
 
 ```text
 Name,N,E,Z

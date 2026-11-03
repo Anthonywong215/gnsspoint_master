@@ -34,6 +34,39 @@ test("grid text accepts spreadsheet tabs, spaces, semicolons and quoted CSV name
   );
 });
 
+test("explicit EN/NE order maps headerless TXYZ points without guessing from overlapping ranges", () => {
+  const text =
+    "TEST1\t832590.508\t820358.910\t26.009\nTEST2\t832690.508\t820458.910\t27.000";
+  const en = C.parseGridText(text, { order: "EN" });
+  const ne = C.parseGridText(text, { order: "NE" });
+  assert.deepEqual(en.issues, []);
+  assert.deepEqual(ne.issues, []);
+  assert.equal(en.points[0].easting, "832590.508");
+  assert.equal(en.points[0].northing, "820358.910");
+  assert.equal(en.points[0].z, "26.009");
+  assert.equal(ne.points[0].northing, "832590.508");
+  assert.equal(ne.points[0].easting, "820358.910");
+  assert.throws(
+    () => C.parseGridText(text, { order: "auto" }),
+    /Choose EN or NE/,
+  );
+});
+
+test("named coordinate headings override the headerless order selection", () => {
+  const ne = C.parseGridText(
+    "ID,Northing,Easting,mPD\nTEST,820358.910,832590.508,26.009",
+    { order: "EN" },
+  );
+  const en = C.parseGridText(
+    "ID,Easting,Northing,mPD\nTEST,832590.508,820358.910,26.009",
+    { order: "NE" },
+  );
+  assert.equal(ne.points[0].northing, "820358.910");
+  assert.equal(en.points[0].northing, "820358.910");
+  assert.equal(ne.points[0].easting, "832590.508");
+  assert.equal(en.points[0].easting, "832590.508");
+});
+
 test("grid guardrails report source lines and reject missing, invalid or geographic input", () => {
   const input =
     "Name,N,E,Z\n\nP1,22.3,114.1,20\nP2,820000,832000,NaN\n,820000,832000,20\nP3,820000,832000\nP4,820000,832000,20,extra\nP5,820000,832000,0";

@@ -42,7 +42,7 @@ Try `samples/demo_decimal.txt` (six synthetic readings of two points), `samples/
 
 ### Paste HK1980 grid points directly
 
-In **Add your files**, choose the **Paste N,E,Z** tab to open the writable input box. Paste or type one point per line, or drag a TXT/CSV/TSV file into the box:
+In **Add your files**, choose the **Paste coordinates** tab to open the writable input box. Paste or type one point per line, or drag a TXT/CSV/TSV file into the box:
 
 ```text
 Name,N,E,Z
@@ -50,7 +50,7 @@ P1,820358.910,832590.508,26.009
 P2,820458.910,832690.508,27.000
 ```
 
-The header is optional. Without a header, use **Name, Northing, Easting, Z** in that order. With headings, either EN or NE order works: `ID,Easting,Northing,mPD`, `ID,Northing,Easting,Height` and the website's own Results CSVs are accepted. Point headings can be `Name` or `ID`; height headings can be `Z`, `mPD`, `Height` or `Elevation`. Headings are case-insensitive and may be reordered. Duplicate coordinate headings are rejected as ambiguous. All coordinates are metres in HK1980 Grid and Z is kept in mPD. Commas, spreadsheet tabs, spaces and semicolons work. For names containing spaces, use comma/tab separated rows; CSV names containing commas must be quoted.
+The header is optional. **Without a header, the default is ID, Easting, Northing, mPD**, matching TXYZ output. For Northing-first rows, select **ID, Northing, Easting, mPD** in **Column order without a header**, then load again. Both orders can fit the HK80 numeric ranges, so numbers alone cannot establish the order. With headings, either EN or NE order works and headings override the selector: `ID,Easting,Northing,mPD`, `ID,Northing,Easting,Height` and the website's own Results CSVs are accepted. Point headings can be `Name` or `ID`; height headings can be `Z`, `mPD`, `Height` or `Elevation`. Headings are case-insensitive and may be reordered. Duplicate coordinate headings are rejected as ambiguous. All coordinates are metres in HK1980 Grid and Z is kept in mPD. Commas, spreadsheet tabs, spaces and semicolons work. For names containing spaces, use comma/tab separated rows; CSV names containing commas must be quoted.
 
 You can also drop a headed grid CSV onto the main **GNSS files** import area. The app identifies grid headings, checks HK80 Northing/Easting ranges, switches to the point input tab and plots the points. Existing HK80 N/E/Z are preserved. The only lookup derives the OSM map location; these rows are not converted from WGS84 back to HK80. You can import receiver files and grid CSVs in the same batch.
 
