@@ -479,6 +479,7 @@
     state.importing = true;
     render();
     const angleFormat = $("angle-format").value;
+    const gridPoints = [];
     let added = 0,
       rejected = 0;
     const formats = { decimal: 0, dms: 0, packed: 0, mixed: 0 };
@@ -490,7 +491,25 @@
           throw new Error(
             "This file exceeds 20 MB. Split the export into smaller files.",
           );
-        const result = C.parseExport(await decodeFile(file), file.name, {
+        const text = await decodeFile(file);
+        if (C.isGridText(text)) {
+          const grid = C.parseGridText(text);
+          if (grid.issues.length) {
+            for (const issue of grid.issues)
+              state.issues.push({
+                ...issue,
+                source: file.name,
+                message: `${issue.message} This grid file was not loaded; correct its rows and retry.`,
+              });
+            rejected += grid.issues.length;
+          } else {
+            gridPoints.push(
+              ...grid.points.map((point) => ({ ...point, source: file.name })),
+            );
+          }
+          continue;
+        }
+        const result = C.parseExport(text, file.name, {
           angleFormat,
         });
         for (const point of result.points)
@@ -525,9 +544,29 @@
     ui["file-input"].value = "";
     announce(
       `${added.toLocaleString()} measurements added. Workspace: ${C.groupMeasurements(state.points).length.toLocaleString()} unique points / ${state.points.length.toLocaleString()} measurements.${added ? ` Interpreted as ${describeFormats(formats)}.` : ""}${rejected ? ` ${rejected} row or file issue${rejected === 1 ? "" : "s"}; expand the import issues to review.` : " Ready for conversion."}`,
-      !added,
+      !added && !gridPoints.length,
     );
     render();
+    if (gridPoints.length) {
+      selectInputTab("grid-tab");
+      const cell = (value) =>
+        /[",\r\n]/.test(String(value))
+          ? `"${String(value).replace(/"/g, '""')}"`
+          : String(value);
+      $("grid-input").value = [
+        "Name,N,E,Z",
+        ...gridPoints.map((point) =>
+          [point.name, point.northing, point.easting, point.z]
+            .map(cell)
+            .join(","),
+        ),
+      ].join("\n");
+      await loadGridPoints({ parsed: { points: gridPoints, issues: [] } });
+      if (!rejected)
+        announce(
+          `${added} GNSS readings imported; ${gridPoints.length} grid points detected by their CSV headings. See the map-loading status in the point input tab.`,
+        );
+    }
   }
 
   function selectInputTab(tab, focus = false) {
@@ -554,7 +593,7 @@
     $("grid-issues").hidden = !issues.length;
   }
 
-  async function loadGridPoints() {
+  async function loadGridPoints(options = {}) {
     if (state.importing || state.converting) return;
     showGridIssues([]);
     let parsed;
@@ -563,7 +602,7 @@
         throw new Error(
           "The pasted text exceeds 20 MB. Split it into smaller sets.",
         );
-      parsed = C.parseGridText($("grid-input").value);
+      parsed = options.parsed || C.parseGridText($("grid-input").value);
       if (parsed.issues.length) {
         showGridIssues(parsed.issues);
         throw new Error(
@@ -584,7 +623,7 @@
       processed = 0;
     const progress = () => {
       $("grid-status").textContent =
-        `Locating ${processed} / ${parsed.points.length} points with LandsD… Z stays in mPD.`;
+        `HK80 grid input · plotting ${processed} / ${parsed.points.length} points on the map… Original N/E/Z stay unchanged.`;
     };
     progress();
     render();
@@ -694,7 +733,7 @@
       }
       showGridIssues([]);
       $("grid-status").textContent =
-        "Text ready. Check Name,N,E,Z order, then click Load & zoom to points.";
+        "Text ready. Named headings determine EN/NE order. Without a header, use Name,N,E,Z. Click Load & zoom to points.";
     } catch (error) {
       $("grid-status").textContent = error.message;
     } finally {

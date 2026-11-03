@@ -20,7 +20,7 @@ Read the [user guide](docs/USER_GUIDE.md), or open the [printable HTML guide](do
 
 ### Paste HK1980 points onto the map
 
-Select **Paste N,E,Z**, type or paste one `Name,Northing,Easting,Z` row per line, then click **Load & zoom to points**. You can also drop a TXT/CSV/TSV file into the writable text box. The optional header is `Name,N,E,Z`; Northing comes before Easting. Commas, tabs, spaces and semicolons are supported. Try [samples/demo_nez.txt](samples/demo_nez.txt).
+Select **Paste N,E,Z**, type or paste coordinates, then click **Load & zoom to points**. You can also drop a TXT/CSV/TSV file into the writable text box. With headings, column order is detected: both `ID,Easting,Northing,mPD` (the website's default Results CSV) and `ID,Northing,Easting,Height` work. `Name`/`ID` and `Z`/`mPD`/`Height`/`Elevation` are accepted. Without a header, use `Name,Northing,Easting,Z` order. Commas, tabs, spaces and semicolons are supported. Try [samples/demo_nez.txt](samples/demo_nez.txt).
 
 ```text
 Name,N,E,Z
@@ -29,6 +29,8 @@ P2,820458.910,832690.508,27.000
 ```
 
 These inputs are **HK1980 Grid coordinates in metres**, with Z retained in mPD. LandsD converts N/E to WGS84 map positions; Z is kept as entered. Internet access is required. Pasted points appear in blue alongside green GNSS readings. Loading replaces the previous pasted set and zooms to that set; **Fit all points** includes both. Invalid rows or failed/stopped lookups keep the previous set in place. The separate **Clear pasted points** button removes only the pasted set. GNSS conversion downloads and mean calculations continue to use receiver readings only.
+
+You can drop a headed grid CSV onto the **main file import area** too: its headings identify existing HK80 points, its coordinates are checked against HK80 grid ranges, and the points are loaded directly onto the map. Mixed receiver/grid batches are supported. Existing N/E/Z are retained; grid CSVs are never sent through WGS84-to-HK80 conversion. Receiver exports with geographical fields keep their original import mapping, including Topcon's `84H` height field.
 
 ### Using a Git clone
 

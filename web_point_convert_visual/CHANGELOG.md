@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix reimport of the website's own Results CSV: map named ID/Name, EN/NE and Height/mPD/Z columns, and route existing HK80 grid CSVs from the main file drop area directly to the map while retaining N/E/Z.
 - Add Small/Medium/Large/Full screen map sizes with view/playback preservation and point-name hover tooltips in Large and Full screen for both GNSS readings and pasted points.
 - Add a writable Paste N,E,Z tab with text/file drop, HK1980 validation, blue map points and zoom to the pasted extent; retain original names/Z separately from GNSS conversion statistics.
 - Synchronize the local website copies with the Topcon/Sino importer and guide, retain deferred map resizing, and document the GitHub Desktop repository folder.

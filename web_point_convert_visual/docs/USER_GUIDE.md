@@ -50,7 +50,9 @@ P1,820358.910,832590.508,26.009
 P2,820458.910,832690.508,27.000
 ```
 
-The header is optional. Use **Name, Northing, Easting, Z** in that order; all coordinates are metres in HK1980 Grid and Z is kept in mPD. Commas, spreadsheet tabs, spaces and semicolons work. For names containing spaces, use comma/tab separated rows; CSV names containing commas must be quoted. A header with Easting before Northing is rejected so that you can reorder it explicitly.
+The header is optional. Without a header, use **Name, Northing, Easting, Z** in that order. With headings, either EN or NE order works: `ID,Easting,Northing,mPD`, `ID,Northing,Easting,Height` and the website's own Results CSVs are accepted. Point headings can be `Name` or `ID`; height headings can be `Z`, `mPD`, `Height` or `Elevation`. Headings are case-insensitive and may be reordered. Duplicate coordinate headings are rejected as ambiguous. All coordinates are metres in HK1980 Grid and Z is kept in mPD. Commas, spreadsheet tabs, spaces and semicolons work. For names containing spaces, use comma/tab separated rows; CSV names containing commas must be quoted.
+
+You can also drop a headed grid CSV onto the main **GNSS files** import area. The app identifies grid headings, checks HK80 Northing/Easting ranges, switches to the point input tab and plots the points. Existing HK80 N/E/Z are preserved. The only lookup derives the OSM map location; these rows are not converted from WGS84 back to HK80. You can import receiver files and grid CSVs in the same batch.
 
 Click **Load & zoom to points**. LandsD locates N/E for the OSM map; your names and Z values stay in the browser. The map shows these points in blue and zooms to their area. Internet access is required. Clicking a point displays its original N/E/Z and name. Try `samples/demo_nez.txt`.
 

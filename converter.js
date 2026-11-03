@@ -18,7 +18,7 @@
     hkpd: 26.009,
   });
   const ALIASES = {
-    name: ["pointname", "pointid", "name"],
+    name: ["pointname", "pointid", "name", "id"],
     lat: ["latitude", "lat"],
     long: ["longitude", "long", "lon", "lng"],
     elevation: ["elevation"],
@@ -518,12 +518,44 @@
     return null;
   }
 
-  function parseGridText(input) {
+  const GRID_ALIASES = {
+    name: ["name", "pointname", "id", "pointid", "uniquepointid"],
+    northing: ["n", "northing", "hkn", "northing(m)"],
+    easting: ["e", "easting", "hke", "easting(m)"],
+    z: [
+      "z",
+      "mpd",
+      "hkpd",
+      "height",
+      "elevation",
+      "height(mpd)",
+      "height(m)",
+      "heightmpd",
+      "z(mpd)",
+      "mpd(m)",
+    ],
+  };
+
+  function gridRecords(input) {
     const text = String(input).replace(/^\uFEFF/, "");
     if (!text.trim()) throw new Error("Paste at least one Name,N,E,Z row.");
     const first = text.split(/\r\n|\n|\r/).find((line) => line.trim());
-    const delimiter = [",", "\t", ";"].find((value) => first.includes(value));
-    const records = delimiter
+    const counts = new Map([
+      [",", 0],
+      ["\t", 0],
+      [";", 0],
+    ]);
+    let quoted = false;
+    for (let i = 0; i < first.length; i++) {
+      const char = first[i];
+      if (char === '"') {
+        if (quoted && first[i + 1] === '"') i++;
+        else quoted = !quoted;
+      } else if (!quoted && counts.has(char))
+        counts.set(char, counts.get(char) + 1);
+    }
+    const [delimiter, count] = [...counts].sort((a, b) => b[1] - a[1])[0];
+    return count
       ? parseDelimited(text, delimiter)
       : text
           .split(/\r\n|\n|\r/)
@@ -532,38 +564,72 @@
               ? [{ cells: line.trim().split(/\s+/), line: index + 1 }]
               : [],
           );
+  }
+
+  function isGridText(input) {
+    const first =
+      String(input)
+        .replace(/^\uFEFF/, "")
+        .split(/\r\n|\n|\r/)
+        .find((line) => line.trim()) || "";
+    if (!first.trim()) return false;
+    const header = gridRecords(first)[0].cells.map(normalize);
+    // Receiver exports also contain grid fields: their geographical fields win.
+    if (
+      header.some((value) =>
+        [...ALIASES.lat, ...ALIASES.long, "b", "l", "84h"].includes(value),
+      )
+    )
+      return false;
+    return (
+      header.some((value) => GRID_ALIASES.name.includes(value)) &&
+      header.some((value) => GRID_ALIASES.northing.includes(value)) &&
+      header.some((value) => GRID_ALIASES.easting.includes(value))
+    );
+  }
+
+  function parseGridText(input) {
+    const records = gridRecords(input);
     const header = records[0].cells.map(normalize);
     const hasHeader =
-      ["name", "pointname", "id", "pointid"].includes(header[0]) &&
-      header
-        .slice(1)
-        .some((value) =>
-          ["n", "northing", "e", "easting", "z", "mpd"].includes(value),
-        );
-    if (
-      hasHeader &&
-      (header.length !== 4 ||
-        !["n", "northing"].includes(header[1]) ||
-        !["e", "easting"].includes(header[2]) ||
-        !["z", "mpd", "height", "elevation"].includes(header[3]))
-    )
-      throw new Error(
-        "Use Name,N,E,Z order (Northing before Easting), including in the header.",
+      header.some((value) => GRID_ALIASES.name.includes(value)) &&
+      header.some((value) =>
+        [
+          ...GRID_ALIASES.northing,
+          ...GRID_ALIASES.easting,
+          ...GRID_ALIASES.z,
+        ].includes(value),
       );
+    const columns = { name: 0, northing: 1, easting: 2, z: 3 };
+    if (hasHeader) {
+      for (const [key, aliases] of Object.entries(GRID_ALIASES)) {
+        const matches = header.flatMap((value, index) =>
+          aliases.includes(value) ? [index] : [],
+        );
+        if (!matches.length)
+          throw new Error(
+            `Missing grid column: ${key === "name" ? "Name / ID" : key === "z" ? "Z / mPD / Height" : key}. Use named Northing and Easting headings; their order can be EN or NE.`,
+          );
+        if (matches.length > 1)
+          throw new Error(
+            `More than one ${key} column was found; the grid mapping is ambiguous.`,
+          );
+        columns[key] = matches[0];
+      }
+    }
     const rows = hasHeader ? records.slice(1) : records;
     if (!rows.length) throw new Error("The header has no point rows below it.");
     const points = [],
       issues = [];
     for (const row of rows) {
-      const [name = "", northing = "", easting = "", z = ""] = row.cells.map(
-        (value) => value.trim(),
-      );
-      const point = { name, northing, easting, z, line: row.line };
+      const point = { line: row.line };
+      for (const [key, index] of Object.entries(columns))
+        point[key] = (row.cells[index] ?? "").trim();
       const message =
-        row.cells.length !== 4
-          ? `Expected 4 columns in Name,N,E,Z order; found ${row.cells.length}.`
+        row.cells.length !== (hasHeader ? header.length : 4)
+          ? `Expected ${hasHeader ? header.length : 4} columns${hasHeader ? " to match the header" : " in Name,N,E,Z order"}; found ${row.cells.length}.`
           : validateGridPoint(point);
-      if (message) issues.push({ line: row.line, name, message });
+      if (message) issues.push({ line: row.line, name: point.name, message });
       else points.push(point);
     }
     return { points, issues };
@@ -601,7 +667,7 @@
           pointId: point.name,
           mapOnly: true,
           gridInput: { ...point },
-          source: "Pasted HK1980 points",
+          source: point.source || "Pasted HK1980 points",
         };
       },
       options,
@@ -890,6 +956,7 @@
     parseDelimited,
     parseExport,
     parseGridText,
+    isGridText,
     requestGridLocation,
     validatePoint,
     buildUrl,

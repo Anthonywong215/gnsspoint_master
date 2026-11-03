@@ -124,7 +124,7 @@
               id="drop-zone"
               tabindex="0"
               role="button"
-              aria-label="Choose GNSS files or drag and drop them here"
+              aria-label="Choose GNSS or exported HK80 CSV files, or drag and drop them here"
             >
               <input
                 id="file-input"
@@ -145,7 +145,7 @@
                 />
                 <path d="M24 39V23m-6 6 6-6 6 6" />
               </svg>
-              <strong>Drag &amp; drop GNSS files here</strong
+              <strong>Drop GNSS files or HK80 CSVs here</strong
               ><span>or <span class="browse-link">browse files</span></span>
               <span class="drop-note"
                 >Multiple files welcome · Original exports stay unchanged</span
@@ -180,9 +180,11 @@
             <p class="grid-help" id="grid-input-help">
               <strong>HK1980 Grid · Name, Northing, Easting, Z (mPD)</strong
               ><br />Paste one point per line, or drop a TXT/CSV file into this
-              box. Commas, tabs and spaces work; the header is optional. Z stays
-              as entered. LandsD locates N/E on the map; your point names are
-              kept in this browser.
+              box. Website exports such as ID,Easting,Northing,mPD work too.
+              Headers determine column order; ID or Name and mPD, Height or Z
+              are accepted. Without a header, use Name,N,E,Z. Z stays as
+              entered. Existing HK80 coordinates are checked and plotted; LandsD
+              locates N/E on the map. Your point names stay in this browser.
             </p>
             <label for="grid-input">Paste or type your points</label>
             <textarea

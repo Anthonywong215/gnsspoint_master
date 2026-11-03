@@ -44,12 +44,84 @@ test("grid guardrails report source lines and reject missing, invalid or geograp
   );
   assert.equal(parsed.points.length, 1);
   assert.equal(parsed.points[0].z, "0");
-  assert.throws(
-    () => C.parseGridText("ID,Easting,Northing,mPD\nP1,832000,820000,20"),
-    /Northing before Easting/,
-  );
   assert.throws(() => C.parseGridText("Name,N,E,Z"), /no point rows/);
   assert.throws(() => C.parseGridText(" "), /Paste at least/);
+});
+
+test("website Results CSV round-trips in both EN and NE order without swapping axes", () => {
+  const points = [
+    { ...C.EXAMPLE, name: "SC43.1", result: C.EXPECTED, status: "done" },
+  ];
+  for (const order of ["EN", "NE"]) {
+    const csv = C.resultsCsv(points, order);
+    assert.equal(C.isGridText(csv), true);
+    const parsed = C.parseGridText(csv);
+    assert.deepEqual(parsed.issues, []);
+    assert.equal(parsed.points[0].name, "SC43");
+    assert.equal(parsed.points[0].northing, "820358.910");
+    assert.equal(parsed.points[0].easting, "832590.508");
+    assert.equal(parsed.points[0].z, "26.009");
+  }
+});
+
+test("grid imports identify ID and Height headings in any order with extra columns", () => {
+  for (const height of [
+    "Height",
+    "HEIGHT",
+    "Height (mPD)",
+    "Height (m)",
+    "Z (mPD)",
+    "mPD",
+    "Z",
+    "Elevation",
+    "hkpd",
+  ]) {
+    const csv = `${height},Easting,Notes,ID,Northing\n26.00900,832591.32000,check,P.1,820359.38900`;
+    assert.equal(C.isGridText(csv), true);
+    assert.deepEqual(C.parseGridText(csv).points[0], {
+      line: 2,
+      name: "P.1",
+      northing: "820359.38900",
+      easting: "832591.32000",
+      z: "26.00900",
+    });
+  }
+  assert.throws(
+    () => C.parseGridText("ID,Easting,Northing\nP1,832000,820000"),
+    /Missing grid column: Z/,
+  );
+  assert.throws(
+    () =>
+      C.parseGridText(
+        "ID,Easting,E,Northing,Height\nP1,832000,832000,820000,20",
+      ),
+    /ambiguous/,
+  );
+  assert.throws(
+    () =>
+      C.parseGridText("ID,Easting,Northing,Height,Z\nP1,832000,820000,20,20"),
+    /ambiguous/,
+  );
+});
+
+test("automatic grid detection preserves geographical receiver import routing", () => {
+  for (const text of [
+    "",
+    "Point name,Northing,Easting,Height,Latitude,Longitude,Elevation\nP1,820000,832000,99,22.32,114.14,23",
+    "Name,E,N,Z,L,B,84H,Elevation\nP1,832000,820000,99,114.14,22.32,23,10",
+    "ID,Latitude,Longitude,Elevation\nP1,22.32,114.14,23",
+    "P1,820000,832000,20",
+  ])
+    assert.equal(C.isGridText(text), false);
+  assert.equal(
+    C.parseExport("ID,Latitude,Longitude,Elevation\nP1,22.32,114.14,23")
+      .points[0].name,
+    "P1",
+  );
+  const quotedTab =
+    '"ID"\t"Easting"\t"Northing"\t"Height"\n"P, one"\t832000\t820000\t20';
+  assert.equal(C.isGridText(quotedTab), true);
+  assert.equal(C.parseGridText(quotedTab).points[0].name, "P, one");
 });
 
 test("grid map lookup sends only horizontal coordinates and retains original Z in mPD", async () => {
