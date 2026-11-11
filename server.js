@@ -12,6 +12,7 @@ const files = {
   "/styles.css": ["styles.css", "text/css; charset=utf-8"],
   "/converter.js": ["converter.js", "text/javascript; charset=utf-8"],
   "/app.js": ["app.js", "text/javascript; charset=utf-8"],
+  "/analysis.js": ["analysis.js", "text/javascript; charset=utf-8"],
 };
 files["/map.js"] = ["map.js", "text/javascript; charset=utf-8"];
 files["/vendor/leaflet/leaflet.js"] = [

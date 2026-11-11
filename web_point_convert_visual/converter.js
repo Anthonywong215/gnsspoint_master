@@ -169,6 +169,91 @@
     return [...groups.values()];
   }
 
+  const ANALYSIS_METRICS = {
+    "3d": ["hkE", "hkN", "hkpd"],
+    horizontal: ["hkE", "hkN"],
+    height: ["hkpd"],
+    easting: ["hkE"],
+    northing: ["hkN"],
+  };
+
+  function retainedStatistics(points) {
+    return (
+      groupMeasurements(
+        points.filter(
+          (point) => point.result && point.excludedFromMean !== true,
+        ),
+      )[0]?.statistics || null
+    );
+  }
+
+  function measurementAnalysis(points, metric = "3d") {
+    const axes = ANALYSIS_METRICS[metric];
+    if (!axes) throw new Error("Unknown outlier ranking metric.");
+    const groups = groupMeasurements(points);
+    if (groups.length > 1)
+      throw new Error(
+        "Analyze one unique point at a time; different survey points must not share a mean.",
+      );
+    const group = groups[0];
+    const baseline = group?.statistics || null;
+    const rows = points
+      .flatMap((point, index) => {
+        if (!point.result) return [];
+        const residuals = Object.fromEntries(
+          ["hkE", "hkN", "hkpd"].map((key) => [
+            key,
+            point.result[key] - baseline[key].mean,
+          ]),
+        );
+        return [
+          {
+            point,
+            index,
+            residuals,
+            score: Math.hypot(...axes.map((key) => residuals[key])),
+          },
+        ];
+      })
+      .sort((a, b) => b.score - a.score || a.index - b.index);
+    rows.forEach((row, index) => {
+      row.rank = index + 1;
+    });
+    const excludedCount = rows.filter(
+      (row) => row.point.excludedFromMean === true,
+    ).length;
+    return {
+      pointId: group?.pointId || null,
+      count: points.length,
+      convertedCount: rows.length,
+      excludedCount,
+      retainedCount: rows.length - excludedCount,
+      baselineStatistics: baseline,
+      retainedStatistics: retainedStatistics(points),
+      rows,
+    };
+  }
+
+  function suggestExclusions(points, keepCount, metric = "3d") {
+    const analysis = measurementAnalysis(points, metric);
+    if (!analysis.count || analysis.convertedCount !== analysis.count)
+      throw new Error(
+        "Convert all measurements for this point before preselecting outliers.",
+      );
+    const minimum = Math.min(2, analysis.count);
+    if (
+      !Number.isInteger(keepCount) ||
+      keepCount < minimum ||
+      keepCount > analysis.count
+    )
+      throw new Error(
+        `Keep a whole number of readings between ${minimum} and ${analysis.count}.`,
+      );
+    return analysis.rows
+      .slice(0, analysis.count - keepCount)
+      .map((row) => row.point);
+  }
+
   function parseAngle(input, axis, format = "auto") {
     const label = axis === "lat" ? "Latitude" : "Longitude";
     if (!ANGLE_FORMATS.includes(format))
@@ -388,13 +473,27 @@
     // Topcon's "Elevation" is not its ellipsoidal height. Select a complete
     // receiver schema before resolving fields; never fall back to that column.
     const topcon = headers.some((name) => ["b", "l", "84h"].includes(name));
+    const prepared =
+      !topcon &&
+      headers.length === 4 &&
+      ["id", "latitude", "longitude", "height"].every((name) =>
+        headers.includes(name),
+      );
     const aliases = topcon
       ? { name: ["name"], lat: ["b"], long: ["l"], elevation: ["84h"] }
-      : ALIASES;
-    const profile = topcon ? "Topcon" : "Standard";
+      : prepared
+        ? { ...ALIASES, name: ["id"], elevation: ["height"] }
+        : ALIASES;
+    const profile = topcon
+      ? "Topcon"
+      : prepared
+        ? "Prepared WGS84"
+        : "Standard";
     const fieldMapping = topcon
       ? "Name → ID · B → latitude · L → longitude · 84H → WGS84 height"
-      : "Point name → ID · Latitude / Longitude · Elevation → WGS84 height";
+      : prepared
+        ? "ID · Latitude / Longitude · Height → WGS84 ellipsoidal height"
+        : "Point name → ID · Latitude / Longitude · Elevation → WGS84 height";
     const columns = {};
     for (const [key, names] of Object.entries(aliases)) {
       const indices = headers.flatMap((name, index) =>
@@ -423,7 +522,7 @@
       for (const [key, index] of Object.entries(columns))
         point[key] = (record.cells[index] ?? "").trim();
       Object.assign(point, pointIdentity(point.name));
-      if (topcon) point.sourceFormat = "Topcon";
+      if (topcon || prepared) point.sourceFormat = profile;
       if (startTimeIndex !== -1) {
         const original = (record.cells[startTimeIndex] || "").trim();
         const timestamp = original.match(
@@ -788,9 +887,55 @@
   function safeName(name) {
     return /^[\s]*[=+\-@]/.test(name) ? `'${name}` : name;
   }
+  function exportBaseName(points) {
+    const sources = [
+      ...new Set(
+        points
+          .filter((point) => !point.isExample)
+          .map((point) => point.source)
+          .filter(Boolean),
+      ),
+    ];
+    const names = [
+      ...new Set(
+        sources
+          .map((source) =>
+            String(source)
+              .split(/[\\/]/)
+              .pop()
+              .replace(/\.(?:txt|csv|tsv)$/i, "")
+              .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "_")
+              .replace(/[. ]+$/g, "")
+              .trim(),
+          )
+          .filter(Boolean),
+      ),
+    ];
+    if (!names.length)
+      return points.some((point) => point.isExample)
+        ? "manual_example"
+        : "gnss";
+    const combined = names.join("_");
+    return combined.length <= 160
+      ? combined
+      : names.length === 1
+        ? names[0].slice(0, 160)
+        : `${names[0].slice(0, 120)}_and_${names.length - 1}_more_files`;
+  }
+
+  function exportFilename(points, stage, extension, detail = "") {
+    if (
+      !["reduced", "converted"].includes(stage) ||
+      !["csv", "txt", "json"].includes(extension) ||
+      (detail && !/^[a-z_]+$/.test(detail))
+    )
+      throw new Error("Invalid export filename options.");
+    return `${exportBaseName(points)}_${stage}${detail ? `_${detail}` : ""}.${extension}`;
+  }
+
   function preparedCsv(points) {
     return makeCsv(
-      ["Point name", "Latitude", "Longitude", "Elevation"],
+      ["ID", "Latitude", "Longitude", "Height"],
       points.map((p) => [safeName(p.name), p.lat, p.long, p.elevation]),
     );
   }
@@ -818,6 +963,8 @@
         "Error",
         "Source format",
         "Original collection timestamp",
+        "Excluded from mean",
+        "Exclusion reason",
       ],
       points.map((p) => [
         safeName(p.name),
@@ -840,6 +987,8 @@
         p.error || "",
         p.sourceFormat || "Standard",
         safeName(p.collectedAt?.original || ""),
+        p.excludedFromMean === true ? "yes" : "no",
+        p.exclusionReason || "",
       ]),
     );
   }
@@ -847,15 +996,18 @@
   function meanCoordinates(points) {
     return groupMeasurements(points)
       .filter((group) => group.convertedCount === group.count)
-      .map((group) => ({
-        pointId: group.pointId,
-        ...Object.fromEntries(
-          ["hkE", "hkN", "hkpd"].map((key) => [
-            key,
-            group.statistics[key].mean,
-          ]),
-        ),
-      }));
+      .flatMap((group) => {
+        const stats = retainedStatistics(group.measurements);
+        if (!stats) return [];
+        return [
+          {
+            pointId: group.pointId,
+            ...Object.fromEntries(
+              ["hkE", "hkN", "hkpd"].map((key) => [key, stats[key].mean]),
+            ),
+          },
+        ];
+      });
   }
 
   function resultsCsv(points, order = "EN") {
@@ -886,28 +1038,116 @@
           `${key} max (m)`,
           `${key} range (m)`,
         ]),
+        "Retained converted measurements",
+        "Excluded converted measurements",
+        ...keys.flatMap((key) => [
+          `${key} retained mean (m)`,
+          `${key} retained sample SD (m)`,
+        ]),
       ],
-      groupMeasurements(points).map((group) => [
-        safeName(group.pointId),
-        group.count,
-        group.convertedCount,
-        group.pendingCount,
-        group.errorCount,
-        ...keys.flatMap((key) => {
-          const stats = group.statistics?.[key];
-          return stats
-            ? [
-                stats.mean.toFixed(6),
-                stats.sampleSd === null ? "" : stats.sampleSd.toFixed(6),
-                stats.min.toFixed(3),
-                stats.max.toFixed(3),
-                stats.range.toFixed(6),
-              ]
-            : ["", "", "", "", ""];
-        }),
-      ]),
+      groupMeasurements(points).map((group) => {
+        const kept = group.measurements.filter(
+          (point) => point.result && point.excludedFromMean !== true,
+        );
+        const stats = retainedStatistics(kept);
+        return [
+          safeName(group.pointId),
+          group.count,
+          group.convertedCount,
+          group.pendingCount,
+          group.errorCount,
+          ...keys.flatMap((key) => {
+            const stats = group.statistics?.[key];
+            return stats
+              ? [
+                  stats.mean.toFixed(6),
+                  stats.sampleSd === null ? "" : stats.sampleSd.toFixed(6),
+                  stats.min.toFixed(3),
+                  stats.max.toFixed(3),
+                  stats.range.toFixed(6),
+                ]
+              : ["", "", "", "", ""];
+          }),
+          kept.length,
+          group.convertedCount - kept.length,
+          ...keys.flatMap((key) => [
+            stats ? stats[key].mean.toFixed(6) : "",
+            stats?.[key].sampleSd === null || !stats
+              ? ""
+              : stats[key].sampleSd.toFixed(6),
+          ]),
+        ];
+      }),
     );
   }
+  function surveySheetCsv(points) {
+    const rows = [];
+    const summary = [
+      ["Average:", "mean"],
+      ["Max:", "max"],
+      ["Min:", "min"],
+      ["Max-Min:", "range"],
+      ["SD:", "sampleSd"],
+    ];
+    const groups = groupMeasurements(points).sort((a, b) =>
+      a.pointId.localeCompare(b.pointId, "en", { numeric: true }),
+    );
+    for (const group of groups) {
+      if (group.convertedCount !== group.count)
+        throw new Error(
+          `Convert all measurements for ${group.pointId} before exporting its spreadsheet layout.`,
+        );
+      const stats = retainedStatistics(group.measurements);
+      if (!stats)
+        throw new Error(
+          `Retain at least one measurement for ${group.pointId} before exporting its spreadsheet layout.`,
+        );
+      const ordered = [
+        ...group.measurements.filter(
+          (point) => point.excludedFromMean !== true,
+        ),
+        ...group.measurements.filter(
+          (point) => point.excludedFromMean === true,
+        ),
+      ];
+      for (let i = 0; i < Math.max(5, ordered.length); i++) {
+        const point = ordered[i],
+          stat = summary[i];
+        rows.push([
+          i === 0 ? safeName(group.pointId) : "",
+          ...["hkN", "hkE", "hkpd"].map((key) =>
+            point ? point.result[key].toFixed(3) : "",
+          ),
+          stat ? stat[0] : "",
+          ...["hkN", "hkE", "hkpd"].map((key) =>
+            stat && stats[key][stat[1]] !== null
+              ? stats[key][stat[1]].toFixed(3)
+              : "",
+          ),
+          point?.excludedFromMean === true
+            ? `Excluded from mean${point.exclusionReason ? `: ${point.exclusionReason}` : ""}`
+            : "",
+          point ? safeName(point.name) : "",
+        ]);
+      }
+    }
+    return makeCsv(
+      [
+        "Point name",
+        "Northing",
+        "Easting",
+        "Height (mPD)",
+        "",
+        "",
+        "",
+        "",
+        "Remark",
+        "Original Point Name",
+      ],
+      rows,
+    );
+  }
+
   function coordinateText(points, order = "EN") {
     const keys = outputKeys(order);
     const rows = meanCoordinates(points).map((point) => {
@@ -939,6 +1179,8 @@
         inputAngles: p.inputAngles,
         collectedAt: p.collectedAt,
         status: p.status,
+        excludedFromMean: p.excludedFromMean === true,
+        exclusionReason: p.exclusionReason || "",
         ...(p.result
           ? Object.fromEntries(keys.map((key) => [key, p.result[key]]))
           : {}),
@@ -957,8 +1199,11 @@
     outputKeys,
     pointIdentity,
     groupMeasurements,
+    measurementAnalysis,
+    suggestExclusions,
     meanCoordinates,
     pointStatisticsCsv,
+    surveySheetCsv,
     parseAngle,
     parseDelimited,
     parseExport,
@@ -971,6 +1216,8 @@
     validateResponse,
     requestConversion,
     preparedCsv,
+    exportBaseName,
+    exportFilename,
     resultsCsv,
     measurementsCsv,
     resultsJson,

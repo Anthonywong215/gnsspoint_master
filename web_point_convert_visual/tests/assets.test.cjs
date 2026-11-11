@@ -29,7 +29,7 @@ test("deferred scripts load Leaflet and converter before map and app", () => {
     assert.doesNotMatch(script.attributes, /\basync\b/, script.src);
   }
   const order = scripts.map(script => script.src);
-  for (const [dependency, consumer] of [["vendor/leaflet/leaflet.js", "map.js"], ["converter.js", "map.js"], ["map.js", "app.js"]]) {
+  for (const [dependency, consumer] of [["vendor/leaflet/leaflet.js", "map.js"], ["converter.js", "map.js"], ["map.js", "app.js"], ["converter.js", "analysis.js"], ["analysis.js", "app.js"]]) {
     assert.ok(order.includes(dependency) && order.includes(consumer));
     assert.ok(order.indexOf(dependency) < order.indexOf(consumer), `${dependency} loads before ${consumer}`);
   }

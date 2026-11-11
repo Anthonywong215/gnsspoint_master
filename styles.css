@@ -976,6 +976,136 @@ th {
   }
 }
 
+#export-filename-note {
+  overflow-wrap: anywhere;
+}
+/* Per-point review of converted measurements. */
+.analysis-panel {
+  margin-top: 24px;
+  padding: 24px;
+}
+.analysis-help {
+  color: #536d60;
+  font-size: 16px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.analysis-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(170px, 0.65fr);
+  gap: 16px;
+  margin: 20px 0 14px;
+}
+.analysis-controls label {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+.analysis-controls select,
+.analysis-controls input {
+  min-width: 0;
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid #b8ccba;
+  border-radius: 7px;
+  padding: 9px;
+  background: #fbfdfb;
+  color: var(--ink);
+  font:
+    16px "Segoe UI",
+    Arial,
+    sans-serif;
+}
+.analysis-controls [aria-invalid="true"] {
+  border-color: #b84932;
+}
+.analysis-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.analysis-actions .primary {
+  margin: 0;
+}
+.analysis-summary {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #e8f1e8;
+  color: var(--green);
+  font-size: 17px;
+  line-height: 1.65;
+}
+.analysis-statistics,
+.analysis-readings {
+  width: 100%;
+  font-size: 16px;
+}
+.analysis-statistics {
+  min-width: 690px;
+}
+.analysis-readings {
+  min-width: 930px;
+}
+.analysis-readings-scroll {
+  max-height: 560px;
+  overflow: auto;
+}
+.analysis-readings thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #edf2ed;
+}
+.analysis-statistics td,
+.analysis-readings td {
+  font-variant-numeric: tabular-nums;
+}
+.analysis-readings .source-name {
+  font-size: 14px;
+  white-space: normal;
+}
+.analysis-readings tr.analysis-excluded td {
+  background: #fff0df;
+}
+.analysis-readings th:last-child,
+.analysis-readings td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: white;
+  border-left: 1px solid var(--line);
+  min-width: 140px;
+}
+.analysis-readings th:last-child {
+  background: #edf2ed;
+  z-index: 3;
+}
+.analysis-removal-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  cursor: pointer;
+}
+.analysis-removal-label input {
+  width: 22px;
+  height: 22px;
+  accent-color: #b46a28;
+}
+@media (max-width: 760px) {
+  .analysis-panel {
+    padding: 18px;
+  }
+  .analysis-controls {
+    grid-template-columns: 1fr;
+  }
+  .analysis-actions .button {
+    width: 100%;
+  }
+}
+
 /* Survey extent and mini map. */
 .extent-panel {
   --map-height: 420px;

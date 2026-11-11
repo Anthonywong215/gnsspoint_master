@@ -302,9 +302,13 @@ test("downloads retain point identity, source precision, failures and 3-decimal 
     error: "Network failure",
   };
   const prepared = C.preparedCsv([done]);
-  assert.match(prepared, /Point name,Latitude,Longitude,Elevation\r\n/);
+  assert.match(prepared, /^\uFEFFID,Latitude,Longitude,Height\r\n/);
   assert.match(prepared, /"'=SUM\(1,2\)"/);
   assert.match(prepared, /22.32224,114.14118,23.128/);
+  const reimported = C.parseExport(prepared);
+  assert.deepEqual(reimported.issues, []);
+  assert.equal(reimported.points[0].elevation, "23.128");
+  assert.equal(reimported.profile, "Prepared WGS84");
   const csv = C.measurementsCsv([done, failed], "NE");
   assert.match(csv, /820358.910,832590.508,26.009/);
   assert.match(csv, /error,Network failure/);

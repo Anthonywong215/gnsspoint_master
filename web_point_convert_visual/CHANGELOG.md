@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add a ten-column spreadsheet layout CSV for the selected point, with retained statistics in the first five data rows and excluded observations marked in remarks. Name exports from the original input filename with _reduced/_converted suffixes, and offer Prepared TXT.
+- Add per-point Data analysis and selection before MicroStation export: rank deviations, preselect removals for a retained-count target, review right-side checkboxes, and compare original/retained mean and sample SD. CAD exports use retained readings; detailed downloads preserve all records and exclusion reasons.
+- Use ID,Latitude,Longitude,Height in Prepared CSV, support reimport of that exact WGS84 schema, and link the LandsD coordinate converter beside the download.
 - Add an explicit EN/NE selector for headerless pasted coordinates, defaulting to Easting-first TXYZ so map lookups do not swap N/E; named CSV headings still take precedence.
 - Fix reimport of the website's own Results CSV: map named ID/Name, EN/NE and Height/mPD/Z columns, and route existing HK80 grid CSVs from the main file drop area directly to the map while retaining N/E/Z.
 - Add Small/Medium/Large/Full screen map sizes with view/playback preservation and point-name hover tooltips in Large and Full screen for both GNSS readings and pasted points.

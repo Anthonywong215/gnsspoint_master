@@ -19,6 +19,7 @@ const rootFiles = [
   "index.html",
   "styles.css",
   "app.js",
+  "analysis.js",
   "converter.js",
   "map.js",
   "server.js",

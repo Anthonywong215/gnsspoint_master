@@ -28,6 +28,7 @@
       "convert-button",
       "stop-button",
       "prepared-button",
+      "prepared-text-button",
       "results-button",
       "measurements-button",
       "statistics-button",
@@ -143,7 +144,7 @@
         `badge ${group.convertedCount === group.count ? "done" : group.errorCount ? "error" : ""}`,
       ),
     );
-    row.append(status, element("td", "Group mean", "group-source"));
+    row.append(status, element("td", "All readings mean", "group-source"));
     fragment.append(row);
     if (!expanded) return;
     const details = element("tr", undefined, "group-details"),
@@ -189,6 +190,7 @@
   function render() {
     window.GnssMap?.update([...state.points, ...state.gridPoints]);
     const busy = state.importing || state.converting;
+    window.GnssAnalysis?.render(state.points, { busy, onChange: render });
     $("grid-load-button").disabled = busy;
     $("grid-clear-button").disabled = busy;
     $("grid-input").disabled = busy;
@@ -224,11 +226,34 @@
         : "Convert with LandsD ↗";
     ui["stop-button"].hidden = !state.converting;
     ui["prepared-button"].disabled = busy || !total;
+    ui["prepared-text-button"].disabled = busy || !total;
+    ui["prepared-button"].title = C.exportFilename(
+      state.points,
+      "reduced",
+      "csv",
+    );
+    ui["prepared-text-button"].title = C.exportFilename(
+      state.points,
+      "reduced",
+      "txt",
+    );
+    $("export-filename-note").textContent =
+      `File names: ${C.exportFilename(state.points, "reduced", "csv")} / .txt for prepared data; ${C.exportFilename(state.points, "converted", "csv")} / .txt for transformed means. Multiple source names are combined.`;
     const means = C.meanCoordinates(state.points);
     ui["results-button"].disabled = busy || !means.length;
+    ui["results-button"].title = C.exportFilename(
+      state.points,
+      "converted",
+      "csv",
+    );
     ui["measurements-button"].disabled = busy || !done;
     ui["statistics-button"].disabled = busy || !done;
     ui["coordinate-button"].disabled = busy || !means.length;
+    ui["coordinate-button"].title = C.exportFilename(
+      state.points,
+      "converted",
+      "txt",
+    );
     ui["coordinate-button"].textContent =
       state.outputOrder === "EN" ? "↓ TXYZ TXT" : "↓ TYXZ TXT";
     ui["json-button"].disabled = busy || !done;
@@ -254,13 +279,13 @@
       }),
     );
     $("output-order-note").textContent =
-      `Mean results use ${state.outputOrder === "EN" ? "ID, Easting, Northing, mPD (TXYZ)" : "ID, Northing, Easting, mPD (TYXZ)"}. Each unique point contributes one mean after all its measurements convert. Measurement details remain available separately.`;
+      `Mean results use ${state.outputOrder === "EN" ? "ID, Easting, Northing, mPD (TXYZ)" : "ID, Northing, Easting, mPD (TYXZ)"}. Each unique point contributes the mean of its retained readings after all its measurements convert. Review exclusions in Data analysis and selection.`;
     $("mean-first-heading").textContent =
       state.outputOrder === "EN" ? "Easting" : "Northing";
     $("mean-second-heading").textContent =
       state.outputOrder === "EN" ? "Northing" : "Easting";
     $("mean-export-summary").textContent =
-      `${means.length.toLocaleString()} of ${groups.length.toLocaleString()} unique point means ready. ${groups.length - means.length} point(s) still have unconverted or failed measurements. CSV has four columns; coordinate.txt has the same values without a header. Means are in metres, to 3 decimal places.`;
+      `${means.length.toLocaleString()} of ${groups.length.toLocaleString()} unique point means ready. ${groups.length - means.length} point(s) have incomplete conversions or no retained readings. ${state.points.filter((point) => point.result && point.excludedFromMean === true).length} converted readings excluded in data analysis. CSV has four columns; the converted TXT has the same values without a header. Retained means are in metres, to 3 decimal places.`;
     const meanBody = $("mean-results-body");
     meanBody.replaceChildren();
     for (const point of means.slice(0, 10)) {
@@ -277,7 +302,7 @@
       const row = element("tr"),
         cell = element(
           "td",
-          "Convert all measurements for a point to prepare its mean coordinates.",
+          "Convert all measurements for a point and retain readings in Data analysis and selection to prepare its mean coordinates.",
         );
       cell.colSpan = 4;
       row.append(cell);
@@ -434,7 +459,9 @@
       };
       const badge = element(
         "span",
-        labels[point.status],
+        point.excludedFromMean === true
+          ? `${labels[point.status]} · excluded from mean`
+          : labels[point.status],
         `badge ${point.status}`,
       );
       if (point.error) {
@@ -821,7 +848,7 @@
     }
     const exportCount = C.meanCoordinates(state.points).length;
     if (exportCount)
-      message += ` ${exportCount} complete point mean(s) ready in Results CSV and coordinate.txt.`;
+      message += ` ${exportCount} complete point mean(s) ready in Results CSV and converted TXT.`;
     announce(message, failed.length > 0);
     render();
   }
@@ -909,36 +936,59 @@
   ui["prepared-button"].addEventListener("click", () =>
     download(
       C.preparedCsv(state.points),
-      "gnss_prepared_wgs84.csv",
+      C.exportFilename(state.points, "reduced", "csv"),
       "text/csv;charset=utf-8",
+    ),
+  );
+  ui["prepared-text-button"].addEventListener("click", () =>
+    download(
+      C.preparedCsv(state.points).replace(/^\uFEFF/, ""),
+      C.exportFilename(state.points, "reduced", "txt"),
+      "text/plain;charset=utf-8",
     ),
   );
   ui["results-button"].addEventListener("click", () =>
     download(
       C.resultsCsv(state.points, state.outputOrder),
-      `gnss_hk1980_${state.outputOrder.toLowerCase()}_results.csv`,
+      C.exportFilename(state.points, "converted", "csv"),
       "text/csv;charset=utf-8",
     ),
   );
   ui["measurements-button"].addEventListener("click", () =>
     download(
       C.measurementsCsv(state.points, state.outputOrder),
-      `gnss_hk1980_${state.outputOrder.toLowerCase()}_measurements.csv`,
+      C.exportFilename(state.points, "converted", "csv", "measurements"),
       "text/csv;charset=utf-8",
     ),
   );
   ui["statistics-button"].addEventListener("click", () =>
     download(
       C.pointStatisticsCsv(state.points, state.outputOrder),
-      `gnss_hk1980_${state.outputOrder.toLowerCase()}_point_statistics.csv`,
+      C.exportFilename(state.points, "converted", "csv", "statistics"),
       "text/csv;charset=utf-8",
     ),
   );
+  $("analysis-sheet-button").addEventListener("click", () => {
+    if (state.importing || state.converting) return;
+    const group = C.groupMeasurements(state.points).find(
+      (point) => point.pointId === $("analysis-point").value,
+    );
+    if (!group) return;
+    try {
+      download(
+        C.surveySheetCsv(group.measurements),
+        C.exportFilename(group.measurements, "converted", "csv", "spreadsheet"),
+        "text/csv;charset=utf-8",
+      );
+    } catch (error) {
+      announce(error.message, true);
+    }
+  });
   ui["coordinate-button"].addEventListener("click", () => {
     try {
       download(
         C.coordinateText(state.points, state.outputOrder),
-        "coordinate.txt",
+        C.exportFilename(state.points, "converted", "txt"),
         "text/plain;charset=utf-8",
       );
     } catch (error) {
@@ -948,7 +998,7 @@
   ui["json-button"].addEventListener("click", () =>
     download(
       C.resultsJson(state.points, state.outputOrder),
-      `gnss_hk1980_${state.outputOrder.toLowerCase()}_results.json`,
+      C.exportFilename(state.points, "converted", "json", "measurements"),
       "application/json;charset=utf-8",
     ),
   );

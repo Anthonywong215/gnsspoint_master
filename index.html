@@ -14,6 +14,7 @@
     <script src="vendor/leaflet/leaflet.js" defer></script>
     <script src="converter.js" defer></script>
     <script src="map.js" defer></script>
+    <script src="analysis.js" defer></script>
     <script src="app.js" defer></script>
   </head>
   <body>
@@ -489,6 +490,10 @@
             point contributes one mean after all its measurements convert.
           </p>
         </div>
+        <p id="export-filename-note" class="mean-export-note">
+          File names keep the original import name, followed by _reduced or
+          _converted.
+        </p>
         <div class="group-controls">
           <label for="point-view">Review</label
           ><select id="point-view" aria-describedby="grouping-note">
@@ -540,6 +545,20 @@
               disabled
             >
               ↓ Prepared CSV</button
+            ><button
+              id="prepared-text-button"
+              type="button"
+              class="text-button"
+              disabled
+            >
+              ↓ Prepared TXT</button
+            ><a
+              id="landsd-tool-link"
+              class="text-button"
+              href="https://www.geodetic.gov.hk/en/services/tform/tform.aspx"
+              target="_blank"
+              rel="noopener noreferrer"
+              >LandsD coordinate converter ↗</a
             ><button
               id="measurements-button"
               type="button"
@@ -628,6 +647,165 @@
         </div>
       </section>
 
+      <section class="panel analysis-panel" aria-labelledby="analysis-heading">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">REVIEW REPEATED MEASUREMENTS</p>
+            <h2 id="analysis-heading">Data analysis and selection</h2>
+          </div>
+        </div>
+        <p class="analysis-help">
+          Choose a point, rank its readings by their departure from the original
+          mean, then review the ticked removals. Changes update the mean CSV and
+          MicroStation export below. Original measurements stay in the detailed
+          downloads.
+        </p>
+        <div class="analysis-controls">
+          <label
+            >Point ID<select
+              id="analysis-point"
+              aria-label="Point to analyze"
+            ></select
+          ></label>
+          <label
+            >Rank outliers by<select id="analysis-metric">
+              <option value="3d">3D distance · E, N and height</option>
+              <option value="horizontal">Horizontal distance · E and N</option>
+              <option value="height">Height deviation · mPD</option>
+              <option value="easting">Easting deviation</option>
+              <option value="northing">Northing deviation</option>
+            </select></label
+          >
+          <label
+            >Measurements to keep<input
+              id="analysis-keep-count"
+              type="number"
+              min="2"
+              step="1"
+              inputmode="numeric"
+              aria-describedby="analysis-target-help"
+          /></label>
+        </div>
+        <div class="analysis-actions">
+          <button
+            id="analysis-preselect"
+            class="button primary"
+            type="button"
+            disabled
+          >
+            Preselect outliers
+          </button>
+          <button
+            id="analysis-restore"
+            class="button ghost"
+            type="button"
+            disabled
+          >
+            Restore all for this point
+          </button>
+          <button
+            id="analysis-sheet-button"
+            class="button ghost"
+            type="button"
+            disabled
+          >
+            ↓ Spreadsheet layout CSV
+          </button>
+        </div>
+        <p class="analysis-help">
+          Spreadsheet layout CSV exports the selected point in the ten-column
+          layout: Northing, Easting and mPD readings, with Average, Max, Min,
+          Max–Min and SD in columns E–H of the first five data rows. Statistics
+          use retained readings; excluded readings follow them with a remark.
+          CSV carries values, not colours or merged cells.
+        </p>
+        <p id="analysis-target-help" class="analysis-help">
+          For 200 readings, keep 180 to preselect the top 20 outliers. Nothing
+          is excluded until you preselect or tick a checkbox. Retain at least
+          two readings when available for sample standard deviation.
+        </p>
+        <p
+          id="analysis-summary"
+          class="analysis-summary"
+          role="status"
+          aria-live="polite"
+        >
+          Convert receiver measurements to analyze their spread.
+        </p>
+        <p
+          id="analysis-message"
+          class="analysis-help"
+          role="status"
+          aria-live="polite"
+        ></p>
+        <div class="table-scroll">
+          <table
+            class="analysis-statistics"
+            aria-label="All readings versus retained mean and sample standard deviation"
+          >
+            <thead>
+              <tr>
+                <th scope="col">Coordinate</th>
+                <th scope="col">All readings mean</th>
+                <th scope="col">All readings SD</th>
+                <th scope="col">Retained mean</th>
+                <th scope="col">Retained SD</th>
+              </tr>
+            </thead>
+            <tbody id="analysis-statistics-body"></tbody>
+          </table>
+        </div>
+        <p class="analysis-help">
+          Largest departures are listed first, in metres. The ranking stays
+          relative to the original group mean while you review exclusions.
+          Review suggestions against field notes; a lower SD alone does not
+          establish accuracy.
+        </p>
+        <div class="table-scroll analysis-readings-scroll">
+          <table
+            class="analysis-readings"
+            aria-label="Ranked measurements with removal checkboxes"
+          >
+            <thead>
+              <tr>
+                <th scope="col">Rank</th>
+                <th scope="col">Measurement / source</th>
+                <th scope="col">Easting</th>
+                <th scope="col">Northing</th>
+                <th scope="col">mPD</th>
+                <th scope="col">Departure (m)</th>
+                <th scope="col">Remove from mean</th>
+              </tr>
+            </thead>
+            <tbody id="analysis-readings-body"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <span id="analysis-caption">No converted readings</span>
+          <div class="pagination">
+            <button
+              id="analysis-previous"
+              type="button"
+              class="text-button"
+              aria-label="Previous analysis page"
+              disabled
+            >
+              ←
+            </button>
+            <span id="analysis-page-label">Page 1 of 1</span>
+            <button
+              id="analysis-next"
+              type="button"
+              class="text-button"
+              aria-label="Next analysis page"
+              disabled
+            >
+              →
+            </button>
+          </div>
+        </div>
+      </section>
+
       <section
         class="panel mean-export-panel"
         aria-labelledby="mean-export-heading"
@@ -657,7 +835,7 @@
         </div>
         <p id="mean-export-summary" class="mean-export-note">
           Convert every measurement for a point to create one mean-coordinate
-          row. Results CSV and coordinate.txt follow the selected output order.
+          row. Results CSV and converted TXT follow the selected output order.
         </p>
         <div class="table-scroll">
           <table aria-label="Unique point mean coordinates for CAD export">
