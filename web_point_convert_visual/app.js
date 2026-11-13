@@ -31,6 +31,7 @@
       "prepared-text-button",
       "results-button",
       "measurements-button",
+      "topo-button",
       "statistics-button",
       "coordinate-button",
       "json-button",
@@ -247,6 +248,13 @@
       "csv",
     );
     ui["measurements-button"].disabled = busy || !done;
+    ui["topo-button"].disabled = busy || !done;
+    ui["topo-button"].title = C.exportFilename(
+      state.points,
+      "converted",
+      "csv",
+      "topo",
+    );
     ui["statistics-button"].disabled = busy || !done;
     ui["coordinate-button"].disabled = busy || !means.length;
     ui["coordinate-button"].title = C.exportFilename(
@@ -958,6 +966,13 @@
     download(
       C.measurementsCsv(state.points, state.outputOrder),
       C.exportFilename(state.points, "converted", "csv", "measurements"),
+      "text/csv;charset=utf-8",
+    ),
+  );
+  ui["topo-button"].addEventListener("click", () =>
+    download(
+      C.topoCsv(state.points),
+      C.exportFilename(state.points, "converted", "csv", "topo"),
       "text/csv;charset=utf-8",
     ),
   );

@@ -993,6 +993,17 @@
     );
   }
 
+  function topoCsv(points) {
+    const keys = ["hkN", "hkE", "hkpd"];
+    return makeCsv(
+      ["Point name", ...keys],
+      points.filter((point) => point.result).map((point) => [
+        safeName(point.name),
+        ...keys.map((key) => point.result[key].toFixed(3)),
+      ]),
+    );
+  }
+
   function meanCoordinates(points) {
     return groupMeasurements(points)
       .filter((group) => group.convertedCount === group.count)
@@ -1220,6 +1231,7 @@
     exportFilename,
     resultsCsv,
     measurementsCsv,
+    topoCsv,
     resultsJson,
     coordinateText,
   };
