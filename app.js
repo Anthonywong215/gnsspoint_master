@@ -862,7 +862,8 @@
   }
 
   function download(contents, filename, type) {
-    const url = URL.createObjectURL(new Blob([contents], { type }));
+    const blob = contents instanceof Blob ? contents : new Blob([contents], { type });
+    const url = URL.createObjectURL(blob);
     const link = element("a");
     link.href = url;
     link.download = filename;
@@ -983,6 +984,16 @@
       "text/csv;charset=utf-8",
     ),
   );
+  $("analysis-charts-button").addEventListener("click", async () => {
+    const status = $("analysis-charts-status");
+    status.textContent = "";
+    try {
+      const { blob, filename } = await window.GnssAnalysis.chartsPng();
+      download(blob, filename, "image/png");
+    } catch (error) {
+      status.textContent = error.message || "Could not download the chart image. Try again.";
+    }
+  });
   $("analysis-sheet-button").addEventListener("click", () => {
     if (state.importing || state.converting) return;
     const group = C.groupMeasurements(state.points).find(

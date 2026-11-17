@@ -926,7 +926,7 @@
   function exportFilename(points, stage, extension, detail = "") {
     if (
       !["reduced", "converted"].includes(stage) ||
-      !["csv", "txt", "json"].includes(extension) ||
+      !["csv", "txt", "json", "png"].includes(extension) ||
       (detail && !/^[a-z_]+$/.test(detail))
     )
       throw new Error("Invalid export filename options.");

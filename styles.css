@@ -1729,3 +1729,6 @@ body.map-fullscreen-open {
 .chart-zero { opacity: 0.45; stroke-dasharray: 4 3; }
 .chart-profile { opacity: 0.55; }
 .chart-dot { fill: #2981be; fill-opacity: 0.85; stroke: currentColor; stroke-width: 0.5; }
+
+.chart-reference { stroke: #a97700; stroke-dasharray: 5 3; }
+.chart-dot-beyond { fill: #ffcf33; fill-opacity: 1; }

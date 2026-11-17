@@ -30,6 +30,8 @@
   }
 
 
+  const referenceOffsets = { hkE: 0.010, hkN: 0.010, hkpd: 0.020 };
+
   const axes = [
     ["hkE", "Easting"],
     ["hkN", "Northing"],
@@ -44,15 +46,23 @@
     return element;
   }
 
-  function renderCharts(rankedRows, groupCount) {
-    const container = $("analysis-chart-grid");
-    $("analysis-charts").hidden = !rankedRows.length;
-    container.replaceChildren();
-    if (!rankedRows.length) return;
+  function sortedGroups(points) {
+    return C.groupMeasurements(points).sort((a, b) =>
+      a.pointId.localeCompare(b.pointId, 'en', { numeric: true }),
+    );
+  }
+
+  function exceedsGuide(residuals, key) {
+    // Allow for floating-point rounding when subtracting HK1980 coordinates.
+    return Math.abs(residuals[key]) - referenceOffsets[key] > 1e-9;
+  }
+
+  function buildCharts(rankedRows, groupCount) {
+    if (!rankedRows.length) return [];
 
     const rows = [...rankedRows].sort((a, b) => a.index - b.index);
-    let horizontalLimit = 0.001;
-    let profileLimit = horizontalLimit;
+    let horizontalLimit = referenceOffsets.hkE * 1.25;
+    let profileLimit = referenceOffsets.hkpd * 1.25;
     for (const { residuals } of rows) {
       horizontalLimit = Math.max(horizontalLimit, Math.abs(residuals.hkE) * 1.08, Math.abs(residuals.hkN) * 1.08);
       profileLimit = Math.max(profileLimit, horizontalLimit, Math.abs(residuals.hkpd) * 1.08);
@@ -64,7 +74,7 @@
         title: label + " profile", yKey, limit: profileLimit,
       })),
     ];
-    for (const { title, xKey, yKey, limit } of plots) {
+    return plots.map(({ title, xKey, yKey, limit }) => {
       const plot = node("figure", undefined, "analysis-chart");
       const svg = graphic("svg", {
         viewBox: "0 0 310 224",
@@ -78,22 +88,36 @@
       const bottom = top + height;
       const midY = top + height / 2;
       const indexSpan = Math.max(1, groupCount - 1);
-      const y = (row) => midY - row.residuals[yKey] / limit * (height / 2);
+      const offsetY = (value) => midY - value / limit * (height / 2);
+      const offsetX = (value) => left + width / 2 + value / limit * (width / 2);
+      const y = (row) => offsetY(row.residuals[yKey]);
       const x = xKey
-        ? (row) => left + width / 2 + row.residuals[xKey] / limit * (width / 2)
+        ? (row) => offsetX(row.residuals[xKey])
         : (row) => left + 5 + row.index / indexSpan * (width - 10);
       const axisText = (x, y, label, anchor = "middle") =>
         graphic("text", { x, y, "text-anchor": anchor }, label);
-      const tick = (value) => Number(value.toPrecision(3)).toString();
+      const tick = (value) => Number((value * 1000).toPrecision(3)).toString();
       svg.append(
         graphic("rect", { x: left, y: top, width, height, class: "chart-frame" }),
         graphic("line", { x1: left, x2: left + width, y1: midY, y2: midY, class: "chart-zero" }),
         axisText(left - 6, top + 9, tick(limit), "end"),
         axisText(left - 6, midY + 4, "0", "end"),
         axisText(left - 6, bottom - 1, tick(-limit), "end"),
-        axisText(left - 6, top - 4, xKey ? "ΔN (m)" : "Δ (m)", "end"),
-        axisText(left + width / 2, bottom + 39, xKey ? "ΔE (m)" : "Reading in import order"),
+        axisText(left - 6, top - 4, xKey ? "ΔN (mm)" : "Δ (mm)", "end"),
+        axisText(left + width / 2, bottom + 39, xKey ? "ΔE (mm)" : "Reading in import order"),
       );
+      for (const sign of [-1, 1]) {
+        const guideY = offsetY(sign * referenceOffsets[yKey]);
+        svg.append(graphic("line", {
+          x1: left, x2: left + width, y1: guideY, y2: guideY, class: "chart-reference",
+        }));
+        if (xKey) {
+          const guideX = offsetX(sign * referenceOffsets[xKey]);
+          svg.append(graphic("line", {
+            x1: guideX, x2: guideX, y1: top, y2: bottom, class: "chart-reference",
+          }));
+        }
+      }
       if (xKey) {
         const midX = left + width / 2;
         svg.append(
@@ -114,27 +138,117 @@
         }
         svg.append(graphic("path", { d: path, class: "chart-profile" }));
       }
+      const plottedAxes = xKey ? [xKey, yKey] : [yKey];
+      const highlighted = [];
       for (const row of rows) {
         const { point, residuals, index } = row;
-        const dot = graphic("circle", { cx: x(row), cy: y(row), r: 3.5, class: "chart-dot" });
-        const values = (xKey ? ["hkE", "hkN"] : [yKey])
-          .map((key) => axes.find(([axis]) => key === axis)[1] + " " + number(residuals[key]) + " m");
+        const beyondGuide = plottedAxes.some((key) => exceedsGuide(residuals, key));
+        const dot = graphic("circle", { cx: x(row), cy: y(row), r: 3.5, class: beyondGuide ? "chart-dot chart-dot-beyond" : "chart-dot" });
+        const values = plottedAxes
+          .map((key) => axes.find(([axis]) => key === axis)[1] + " " + (residuals[key] * 1000).toFixed(3) + " mm");
         const source = [point.source, point.line && "line " + point.line].filter(Boolean).join(", ");
         dot.append(graphic("title", {}, "#" + (index + 1) + " " + point.name +
-          (source ? " (" + source + ")" : "") + " · " + values.join(", ")));
-        svg.append(dot);
+          (source ? " (" + source + ")" : "") + " · " + values.join(", ") +
+          (beyondGuide ? " (beyond reference)" : "")));
+        if (beyondGuide) highlighted.push(dot);
+        else svg.append(dot);
       }
+      for (const dot of highlighted) svg.append(dot);
       plot.append(node("figcaption", title), svg);
-      container.append(plot);
+      return plot;
+    });
+  }
+
+
+  async function chartsPng() {
+
+    const points = state.points;
+    const groups = sortedGroups(points);
+    const width = 1280;
+    const headerHeight = 82;
+    const rowHeight = 272;
+    const height = headerHeight + groups.length * rowHeight;
+    const scale = Math.min(2, 32767 / height, Math.sqrt(64000000 / (width * height)));
+    if (scale < 0.75)
+      throw new Error("This report is too tall for one readable PNG. Import fewer point IDs and try again.");
+    const report = graphic("svg", { width, height, viewBox: [0, 0, width, height].join(" ") });
+    const style = graphic("style", {}, `
+      text { fill: #172536; font-family: Arial, sans-serif; font-size: 11px; }
+      .chart-frame, .chart-zero, .chart-profile, .chart-reference { fill: none; }
+      .chart-frame { stroke: #c7d0da; }
+      .chart-zero { stroke: #788595; stroke-dasharray: 4 3; }
+      .chart-profile { stroke: #788595; }
+      .chart-reference { stroke: #a97700; stroke-dasharray: 5 3; }
+      .chart-dot { fill: #2981be; stroke: #172536; stroke-width: 0.5; }
+      .chart-dot-beyond { fill: #ffcf33; }
+    `);
+
+    report.append(
+      style,
+      graphic("rect", { width, height, fill: "#ffffff" }),
+      graphic("text", { x: 20, y: 30, style: "font-size: 22px; font-weight: bold" },
+        "GNSS repeatability | " + groups.length + " point IDs"),
+      graphic("text", { x: 20, y: 52, style: "font-size: 13px" },
+        "Offsets from each point mean. Yellow exceeds the reference: Easting/Northing ±10 mm, height ±20 mm."),
+      graphic("text", { x: 20, y: 70, style: "font-size: 13px" },
+        "Compare with independent survey control to check for a shift shared by the whole set."),
+    );
+    groups.forEach((group, i) => {
+      const top = headerHeight + i * rowHeight;
+      const analysis = C.measurementAnalysis(group.measurements);
+      const counts = axes.map(([key, label]) =>
+        label + " " + analysis.rows.filter(({ residuals }) => exceedsGuide(residuals, key)).length,
+      );
+      const pointLabel = graphic("text", { x: 20, y: top + 24, style: "font-size: 16px; font-weight: bold" }, group.pointId);
+      if (group.pointId.length > 70) {
+        pointLabel.setAttribute("textLength", "700");
+        pointLabel.setAttribute("lengthAdjust", "spacingAndGlyphs");
+      }
+      report.append(
+        graphic("rect", { x: 0, y: top, width, height: rowHeight, fill: i % 2 ? "#f5f8fb" : "#ffffff" }),
+        graphic("line", { x1: 20, x2: 1260, y1: top, y2: top, stroke: "#c7d0da" }),
+        pointLabel,
+        graphic("text", { x: 1260, y: top + 24, "text-anchor": "end", style: "font-size: 12px" },
+          analysis.convertedCount + "/" + analysis.count + " converted" +
+            (analysis.convertedCount ? " | Beyond guide: " + counts.join(", ") : " | No converted readings")),
+      );
+      buildCharts(analysis.rows, analysis.count).forEach((figure, column) => {
+        const left = 20 + column * 310;
+        const chart = figure.querySelector("svg");
+        chart.setAttribute("x", left);
+        chart.setAttribute("y", top + 46);
+        chart.setAttribute("width", "310");
+        chart.setAttribute("height", "224");
+        report.append(
+          graphic("text", { x: left + 2, y: top + 44, style: "font-size: 13px; font-weight: bold" },
+            figure.querySelector("figcaption").textContent),
+          chart,
+        );
+      });
+    });
+
+    const source = new Blob([new XMLSerializer().serializeToString(report)], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(source);
+    try {
+      const image = new Image();
+      image.src = url;
+      await image.decode();
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.floor(width * scale);
+      canvas.height = Math.floor(height * scale);
+      canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+      if (!blob) throw new Error("Could not encode the chart image.");
+      return { blob, filename: C.exportFilename(points, "converted", "png", "charts") };
+    } finally {
+      URL.revokeObjectURL(url);
     }
   }
 
   function render(points, { busy = false } = {}) {
     state.points = points;
     state.busy = busy;
-    const groups = C.groupMeasurements(points).sort((a, b) =>
-      a.pointId.localeCompare(b.pointId, "en", { numeric: true }),
-    );
+    const groups = sortedGroups(points);
     const available = new Set(groups.map((group) => group.pointId));
     if (!available.has(state.pointId)) {
       state.pointId = groups[0]?.pointId ?? null;
@@ -161,12 +275,14 @@
     );
     const complete =
       analysis.count > 0 && analysis.convertedCount === analysis.count;
+    $("analysis-charts-button").disabled = busy || !points.some((point) => point.result);
     $("analysis-metric").disabled = busy || !analysis.convertedCount;
     $("analysis-sheet-button").disabled = busy || !complete;
     $("analysis-summary").textContent = group
       ? `${group.pointId}: ${analysis.convertedCount} of ${analysis.count} readings converted. ${complete ? "All readings contribute to the CAD mean." : "The plots show converted readings so far. The CAD mean requires all readings to convert."}`
       : "Import and convert receiver measurements to analyze their spread. Pasted grid points are map-only.";
-    renderCharts(analysis.rows, analysis.count);
+    $("analysis-charts").hidden = !analysis.rows.length;
+    $("analysis-chart-grid").replaceChildren(...buildCharts(analysis.rows, analysis.count));
     $("analysis-statistics-body").replaceChildren(
       ...[
         ["hkE", "Easting (m)"],
@@ -224,13 +340,13 @@
         value.append(
           node(
             "span",
-            `Δ ${delta >= 0 ? "+" : ""}${delta.toFixed(6)}`,
+            `Δ ${delta >= 0 ? "+" : ""}${(delta * 1000).toFixed(3)} mm`,
             "source-name",
           ),
         );
         row.append(value);
       }
-      row.append(node("td", entry.score.toFixed(6)));
+      row.append(node("td", (entry.score * 1000).toFixed(3)));
       body.append(row);
     }
     if (!analysis.rows.length) {
@@ -269,5 +385,5 @@
     state.page++;
     redraw();
   });
-  window.GnssAnalysis = { render };
+  window.GnssAnalysis = { render, chartsPng };
 })();

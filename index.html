@@ -684,6 +684,9 @@
           >
         </div>
         <div class="analysis-actions">
+          <button id="analysis-charts-button" class="button ghost" type="button" disabled>
+            Download all point charts (PNG)
+          </button>
           <button
             id="analysis-sheet-button"
             class="button ghost"
@@ -707,11 +710,14 @@
         >
           Convert receiver measurements to analyze their spread.
         </p>
+        <p id="analysis-charts-status" class="analysis-help" role="status"></p>
         <div id="analysis-charts" hidden>
           <p class="analysis-help">
             Offsets are relative to the mean of the converted readings. The plan view uses
             equal scales for Easting and Northing. The three profiles share a vertical scale
-            and follow import order. Use an independent survey control point to check
+            and follow import order. Dashed guides mark &plusmn;10 mm for Easting and
+            Northing and &plusmn;20 mm for height. Yellow readings exceed a guide
+            on that plot. Use an independent survey control point to check
             for a shift affecting the entire set.
           </p>
           <div id="analysis-chart-grid" class="analysis-chart-grid"></div>
@@ -732,7 +738,7 @@
           </table>
         </div>
         <p class="analysis-help">
-          The table ranks readings by departure from the group mean, in metres.
+          The table ranks readings by departure from the group mean, in millimetres.
         </p>
         <div class="table-scroll analysis-readings-scroll">
           <table
@@ -746,7 +752,7 @@
                 <th scope="col">Easting</th>
                 <th scope="col">Northing</th>
                 <th scope="col">mPD</th>
-                <th scope="col">Departure (m)</th>
+                <th scope="col">Departure (mm)</th>
               </tr>
             </thead>
             <tbody id="analysis-readings-body"></tbody>
