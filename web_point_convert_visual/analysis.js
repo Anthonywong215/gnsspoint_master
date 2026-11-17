@@ -30,7 +30,7 @@
   }
 
 
-  const referenceOffsets = { hkE: 0.010, hkN: 0.010, hkpd: 0.020 };
+  const referenceOffsets = { hkE: 0.005, hkN: 0.005, hkpd: 0.015 };
 
   const axes = [
     ["hkE", "Easting"],
@@ -189,7 +189,7 @@
       graphic("text", { x: 20, y: 30, style: "font-size: 22px; font-weight: bold" },
         "GNSS repeatability | " + groups.length + " point IDs"),
       graphic("text", { x: 20, y: 52, style: "font-size: 13px" },
-        "Offsets from each point mean. Yellow exceeds the reference: Easting/Northing ±10 mm, height ±20 mm."),
+        "Offsets from each point mean. Yellow exceeds the reference: Easting/Northing ±5 mm, height ±15 mm."),
       graphic("text", { x: 20, y: 70, style: "font-size: 13px" },
         "Compare with independent survey control to check for a shift shared by the whole set."),
     );
