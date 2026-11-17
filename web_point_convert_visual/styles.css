@@ -1693,3 +1693,39 @@ body.map-fullscreen-open {
     flex-basis: 100%;
   }
 }
+
+.analysis-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 12px;
+  margin: 12px 0 20px;
+}
+.analysis-chart {
+  margin: 0;
+  padding: 10px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+}
+.analysis-chart figcaption {
+  font-weight: 650;
+}
+.analysis-chart svg {
+  display: block;
+  width: 100%;
+  max-height: 240px;
+  overflow: visible;
+}
+.analysis-chart text {
+  fill: currentColor;
+  font-size: 11px;
+}
+.chart-frame,
+.chart-zero,
+.chart-profile {
+  fill: none;
+  stroke: currentColor;
+}
+.chart-frame { opacity: 0.2; }
+.chart-zero { opacity: 0.45; stroke-dasharray: 4 3; }
+.chart-profile { opacity: 0.55; }
+.chart-dot { fill: #2981be; fill-opacity: 0.85; stroke: currentColor; stroke-width: 0.5; }

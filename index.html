@@ -663,10 +663,8 @@
           </div>
         </div>
         <p class="analysis-help">
-          Choose a point, rank its readings by their departure from the original
-          mean, then review the ticked removals. Changes update the mean CSV and
-          MicroStation export below. Original measurements stay in the detailed
-          downloads.
+          Choose a point to review every converted reading. The graphs show
+          direction and drift. Every reading contributes to the exported mean.
         </p>
         <div class="analysis-controls">
           <label
@@ -676,7 +674,7 @@
             ></select
           ></label>
           <label
-            >Rank outliers by<select id="analysis-metric">
+            >Rank departures by<select id="analysis-metric">
               <option value="3d">3D distance · E, N and height</option>
               <option value="horizontal">Horizontal distance · E and N</option>
               <option value="height">Height deviation · mPD</option>
@@ -684,33 +682,8 @@
               <option value="northing">Northing deviation</option>
             </select></label
           >
-          <label
-            >Measurements to keep<input
-              id="analysis-keep-count"
-              type="number"
-              min="2"
-              step="1"
-              inputmode="numeric"
-              aria-describedby="analysis-target-help"
-          /></label>
         </div>
         <div class="analysis-actions">
-          <button
-            id="analysis-preselect"
-            class="button primary"
-            type="button"
-            disabled
-          >
-            Preselect outliers
-          </button>
-          <button
-            id="analysis-restore"
-            class="button ghost"
-            type="button"
-            disabled
-          >
-            Restore all for this point
-          </button>
           <button
             id="analysis-sheet-button"
             class="button ghost"
@@ -724,13 +697,7 @@
           Spreadsheet layout CSV exports the selected point in the ten-column
           layout: Northing, Easting and mPD readings, with Average, Max, Min,
           Max–Min and SD in columns E–H of the first five data rows. Statistics
-          use retained readings; excluded readings follow them with a remark.
-          CSV carries values, not colours or merged cells.
-        </p>
-        <p id="analysis-target-help" class="analysis-help">
-          For 200 readings, keep 180 to preselect the top 20 outliers. Nothing
-          is excluded until you preselect or tick a checkbox. Retain at least
-          two readings when available for sample standard deviation.
+          use all readings. The CSV contains the values and column headings.
         </p>
         <p
           id="analysis-summary"
@@ -740,39 +707,37 @@
         >
           Convert receiver measurements to analyze their spread.
         </p>
-        <p
-          id="analysis-message"
-          class="analysis-help"
-          role="status"
-          aria-live="polite"
-        ></p>
+        <div id="analysis-charts" hidden>
+          <p class="analysis-help">
+            Offsets are relative to the mean of the converted readings. The plan view uses
+            equal scales for Easting and Northing. The three profiles share a vertical scale
+            and follow import order. Use an independent survey control point to check
+            for a shift affecting the entire set.
+          </p>
+          <div id="analysis-chart-grid" class="analysis-chart-grid"></div>
+        </div>
         <div class="table-scroll">
           <table
             class="analysis-statistics"
-            aria-label="All readings versus retained mean and sample standard deviation"
+            aria-label="Mean and sample standard deviation of all converted readings"
           >
             <thead>
               <tr>
                 <th scope="col">Coordinate</th>
                 <th scope="col">All readings mean</th>
                 <th scope="col">All readings SD</th>
-                <th scope="col">Retained mean</th>
-                <th scope="col">Retained SD</th>
               </tr>
             </thead>
             <tbody id="analysis-statistics-body"></tbody>
           </table>
         </div>
         <p class="analysis-help">
-          Largest departures are listed first, in metres. The ranking stays
-          relative to the original group mean while you review exclusions.
-          Review suggestions against field notes; a lower SD alone does not
-          establish accuracy.
+          The table ranks readings by departure from the group mean, in metres.
         </p>
         <div class="table-scroll analysis-readings-scroll">
           <table
             class="analysis-readings"
-            aria-label="Ranked measurements with removal checkboxes"
+            aria-label="Ranked measurements"
           >
             <thead>
               <tr>
@@ -782,7 +747,6 @@
                 <th scope="col">Northing</th>
                 <th scope="col">mPD</th>
                 <th scope="col">Departure (m)</th>
-                <th scope="col">Remove from mean</th>
               </tr>
             </thead>
             <tbody id="analysis-readings-body"></tbody>

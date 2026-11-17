@@ -82,38 +82,34 @@ Click Convert with LandsD. The app makes two requests at a time; an individual r
 
 Each reading is converted individually before averaging. Expand a group to see mean, sample standard deviation, min/max and range of completed results. Sample SD uses `n − 1` and is unavailable for a single reading. Partial statistics display used/total counts.
 
-## 7. Analyze and select measurements
+## 7. Analyze repeated measurements
 
 The **Data analysis and selection** panel appears before **MicroStation coordinate export**. Use it after converting the receiver readings.
 
-1. Select a **Point ID**. IDs are sorted naturally (for example, P2 before P10); each point's readings are analyzed separately.
-2. Choose **Rank outliers by**: 3D distance, horizontal distance, height deviation, Easting or Northing. The largest departures from the original group mean come first, in metres. Coordinate cells also show each reading's signed departure (Δ).
-3. Set **Measurements to keep**. For 200 readings, enter **180**, then click **Preselect top 20 outliers**. The suggested target is 90%, rounded up; entering a target does not itself exclude any readings.
-4. Review the highlighted rows. A tick in the right-hand **Remove from mean** column excludes that individual record. Untick to restore it. Duplicate measurement names have separate record IDs and can be selected independently.
-5. Compare **All readings mean / SD** with **Retained mean / SD** for E, N and mPD. Then download the mean CSV or TXYZ below; the exports use your retained readings.
+1. Select a **Point ID** to plot all its converted readings.
+2. Use **Plan spread** to inspect horizontal clustering at equal Easting and Northing scales. Use the Easting, Northing and height profiles to check for drift and steps in import order. The profiles share a vertical scale.
+3. Choose **Rank departures by** to sort the table by 3D distance, horizontal distance, height, Easting or Northing. The table displays 50 readings per page and the graphs show every converted reading.
 
-All measurements for the selected point must convert before exclusions can be edited. At least two readings must be retained when two or more are available, so sample SD remains defined. A single-reading point has a mean but no sample SD. Selections cover every page (50 ranked readings per page) and stay independent for each point. Changing the ranking metric preserves existing exclusions; preselect again to replace them with that metric's suggestions. **Restore all for this point** reverses its selections.
-
-Ranking remains based on all original converted readings while you review; it does not shift as you tick boxes. Equal scores keep import order; ties at the cutoff are identified. Lower SD describes a tighter cluster and does not by itself establish accuracy. Review field notes before removing readings. The original review table and map retain all observations, and Measurements CSV/JSON retain excluded records, their unique IDs and reasons. Point stats CSV includes both original statistics and retained mean/SD/counts. Pasted grid points remain separate from this receiver analysis.
+All readings contribute to the CAD mean once converted. Sample SD is available from two readings. A shift shared by the whole set can be checked against independent survey control.
 
 ### Export a spreadsheet worksheet layout
 
-Choose a point, review its exclusions, then click **Spreadsheet layout CSV** in the analysis panel. It exports that point's readings with statistics in the first five data rows, matching the ten-column survey worksheet arrangement:
+Choose a point, then click **Spreadsheet layout CSV** in the analysis panel. It exports that point's readings with statistics in the first five data rows, matching the ten-column survey worksheet arrangement:
 
 - **A:** unique point ID, on the first row of the block.
 - **B/C/D:** each observation's Northing, Easting and height in mPD.
 - **E:** Average, Max, Min, Max–Min and sample SD, in the first five data rows.
-- **F/G/H:** those statistics for Northing, Easting and height, calculated from retained observations only.
-- **I:** exclusion remark for removed readings.
+- **F/G/H:** those statistics for Northing, Easting and height, calculated from all observations.
+- **I:** remark column.
 - **J:** original measurement name for every observation.
 
-Retained observations come first in their original order, followed by excluded observations. The sheet always uses N/E/mPD order, even if MicroStation output is EN. All measurements for the selected point must convert first. Groups with fewer than five readings are padded to keep all five statistics; a single reading has no sample SD. Coordinates and statistics are shown to three decimals.
+Observations appear in import order. The sheet always uses N/E/mPD order, even if MicroStation output is EN. All measurements for the selected point must convert first. Groups with fewer than five readings are padded to keep all five statistics; a single reading has no sample SD. Coordinates and statistics are shown to three decimals.
 
-Open the CSV in Excel, select the ten data columns below its header, and paste into an unmerged A2:J… area of your template. Apply the template's colours and merges afterward; CSV contains values rather than formatting. Excluded observations remain in the CSV with a remark.
+Open the CSV in Excel, select the ten data columns below its header, and paste into an unmerged A2:J… area of your template. Apply the template's colours and merges afterward; CSV contains values rather than formatting.
 
 ## 8. Download unique-point mean CSV
 
-Use the separate **Unique point means** panel. A group enters this export only after **all its accepted measurements convert**. Its exported mean uses the readings retained in **Data analysis and selection**. Incomplete groups remain in the measurement/statistics downloads, and the panel shows ready/incomplete counts.
+Use the separate **Unique point means** panel. A group enters this export only after **all its accepted measurements convert**. Its exported mean uses all the readings for that point. Incomplete groups remain in the measurement/statistics downloads, and the panel shows ready/incomplete counts.
 
 The default Results CSV has exactly four columns and one mean row per eligible ID:
 

@@ -191,7 +191,7 @@
   function render() {
     window.GnssMap?.update([...state.points, ...state.gridPoints]);
     const busy = state.importing || state.converting;
-    window.GnssAnalysis?.render(state.points, { busy, onChange: render });
+    window.GnssAnalysis?.render(state.points, { busy });
     $("grid-load-button").disabled = busy;
     $("grid-clear-button").disabled = busy;
     $("grid-input").disabled = busy;
@@ -287,13 +287,13 @@
       }),
     );
     $("output-order-note").textContent =
-      `Mean results use ${state.outputOrder === "EN" ? "ID, Easting, Northing, mPD (TXYZ)" : "ID, Northing, Easting, mPD (TYXZ)"}. Each unique point contributes the mean of its retained readings after all its measurements convert. Review exclusions in Data analysis and selection.`;
+      `Mean results use ${state.outputOrder === "EN" ? "ID, Easting, Northing, mPD (TXYZ)" : "ID, Northing, Easting, mPD (TYXZ)"}. Each unique point contributes the mean of all its readings after conversion.`;
     $("mean-first-heading").textContent =
       state.outputOrder === "EN" ? "Easting" : "Northing";
     $("mean-second-heading").textContent =
       state.outputOrder === "EN" ? "Northing" : "Easting";
     $("mean-export-summary").textContent =
-      `${means.length.toLocaleString()} of ${groups.length.toLocaleString()} unique point means ready. ${groups.length - means.length} point(s) have incomplete conversions or no retained readings. ${state.points.filter((point) => point.result && point.excludedFromMean === true).length} converted readings excluded in data analysis. CSV has four columns; the converted TXT has the same values without a header. Retained means are in metres, to 3 decimal places.`;
+      `${means.length.toLocaleString()} of ${groups.length.toLocaleString()} unique point means ready. ${groups.length - means.length} point(s) have incomplete conversions. CSV has four columns; the converted TXT has the same values without a header. Means are in metres, to 3 decimal places.`;
     const meanBody = $("mean-results-body");
     meanBody.replaceChildren();
     for (const point of means.slice(0, 10)) {
@@ -310,7 +310,7 @@
       const row = element("tr"),
         cell = element(
           "td",
-          "Convert all measurements for a point and retain readings in Data analysis and selection to prepare its mean coordinates.",
+          "Convert all measurements for a point to prepare its mean coordinates.",
         );
       cell.colSpan = 4;
       row.append(cell);

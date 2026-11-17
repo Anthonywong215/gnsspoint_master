@@ -13,13 +13,9 @@
   const state = {
     points: [],
     busy: false,
-    onChange: null,
     pointId: null,
     metric: "3d",
-    targets: new Map(),
     page: 0,
-    group: null,
-    analysis: null,
   };
   function node(tag, text, className) {
     const result = document.createElement(tag);
@@ -29,31 +25,120 @@
   }
   const number = (value) =>
     value === null || value === undefined ? "—" : value.toFixed(6);
-  function message(text = "") {
-    $("analysis-message").textContent = text;
-  }
   function redraw() {
-    render(state.points, { busy: state.busy, onChange: state.onChange });
-  }
-  function changed() {
-    if (state.onChange) state.onChange();
-    else redraw();
+    render(state.points, { busy: state.busy });
   }
 
-  function render(points, { busy = false, onChange = null } = {}) {
+
+  const axes = [
+    ["hkE", "Easting"],
+    ["hkN", "Northing"],
+    ["hkpd", "Height"],
+  ];
+
+  function graphic(tag, attributes, label) {
+    const element = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (const [name, value] of Object.entries(attributes))
+      element.setAttribute(name, value);
+    if (label !== undefined) element.textContent = label;
+    return element;
+  }
+
+  function renderCharts(rankedRows, groupCount) {
+    const container = $("analysis-chart-grid");
+    $("analysis-charts").hidden = !rankedRows.length;
+    container.replaceChildren();
+    if (!rankedRows.length) return;
+
+    const rows = [...rankedRows].sort((a, b) => a.index - b.index);
+    let horizontalLimit = 0.001;
+    let profileLimit = horizontalLimit;
+    for (const { residuals } of rows) {
+      horizontalLimit = Math.max(horizontalLimit, Math.abs(residuals.hkE) * 1.08, Math.abs(residuals.hkN) * 1.08);
+      profileLimit = Math.max(profileLimit, horizontalLimit, Math.abs(residuals.hkpd) * 1.08);
+    }
+
+    const plots = [
+      { title: "Plan spread", xKey: "hkE", yKey: "hkN", limit: horizontalLimit },
+      ...axes.map(([yKey, label]) => ({
+        title: label + " profile", yKey, limit: profileLimit,
+      })),
+    ];
+    for (const { title, xKey, yKey, limit } of plots) {
+      const plot = node("figure", undefined, "analysis-chart");
+      const svg = graphic("svg", {
+        viewBox: "0 0 310 224",
+        role: "img",
+        "aria-label": title + " for " + rows.length + " converted readings",
+      });
+      const left = xKey ? 100 : 64;
+      const width = xKey ? 154 : 224;
+      const top = 16;
+      const height = 154;
+      const bottom = top + height;
+      const midY = top + height / 2;
+      const indexSpan = Math.max(1, groupCount - 1);
+      const y = (row) => midY - row.residuals[yKey] / limit * (height / 2);
+      const x = xKey
+        ? (row) => left + width / 2 + row.residuals[xKey] / limit * (width / 2)
+        : (row) => left + 5 + row.index / indexSpan * (width - 10);
+      const axisText = (x, y, label, anchor = "middle") =>
+        graphic("text", { x, y, "text-anchor": anchor }, label);
+      const tick = (value) => Number(value.toPrecision(3)).toString();
+      svg.append(
+        graphic("rect", { x: left, y: top, width, height, class: "chart-frame" }),
+        graphic("line", { x1: left, x2: left + width, y1: midY, y2: midY, class: "chart-zero" }),
+        axisText(left - 6, top + 9, tick(limit), "end"),
+        axisText(left - 6, midY + 4, "0", "end"),
+        axisText(left - 6, bottom - 1, tick(-limit), "end"),
+        axisText(left - 6, top - 4, xKey ? "ΔN (m)" : "Δ (m)", "end"),
+        axisText(left + width / 2, bottom + 39, xKey ? "ΔE (m)" : "Reading in import order"),
+      );
+      if (xKey) {
+        const midX = left + width / 2;
+        svg.append(
+          graphic("line", { x1: midX, x2: midX, y1: top, y2: bottom, class: "chart-zero" }),
+          axisText(left, bottom + 17, tick(-limit)),
+          axisText(midX, bottom + 17, "0"),
+          axisText(left + width, bottom + 17, tick(limit)),
+        );
+      } else {
+        svg.append(axisText(left + 5, bottom + 17, "1"));
+        if (groupCount > 1)
+          svg.append(axisText(left + width - 5, bottom + 17, String(groupCount)));
+        let path = "";
+        let previousIndex = -2;
+        for (const row of rows) {
+          path += (row.index === previousIndex + 1 ? " L " : " M ") + x(row) + " " + y(row);
+          previousIndex = row.index;
+        }
+        svg.append(graphic("path", { d: path, class: "chart-profile" }));
+      }
+      for (const row of rows) {
+        const { point, residuals, index } = row;
+        const dot = graphic("circle", { cx: x(row), cy: y(row), r: 3.5, class: "chart-dot" });
+        const values = (xKey ? ["hkE", "hkN"] : [yKey])
+          .map((key) => axes.find(([axis]) => key === axis)[1] + " " + number(residuals[key]) + " m");
+        const source = [point.source, point.line && "line " + point.line].filter(Boolean).join(", ");
+        dot.append(graphic("title", {}, "#" + (index + 1) + " " + point.name +
+          (source ? " (" + source + ")" : "") + " · " + values.join(", ")));
+        svg.append(dot);
+      }
+      plot.append(node("figcaption", title), svg);
+      container.append(plot);
+    }
+  }
+
+  function render(points, { busy = false } = {}) {
     state.points = points;
     state.busy = busy;
-    state.onChange = onChange;
     const groups = C.groupMeasurements(points).sort((a, b) =>
       a.pointId.localeCompare(b.pointId, "en", { numeric: true }),
     );
     const available = new Set(groups.map((group) => group.pointId));
-    for (const id of state.targets.keys())
-      if (!available.has(id)) state.targets.delete(id);
     if (!available.has(state.pointId)) {
       state.pointId = groups[0]?.pointId ?? null;
       state.page = 0;
-      message();
     }
     $("analysis-point").replaceChildren(
       ...groups.map((group) => {
@@ -70,59 +155,30 @@
     const group = groups.find(
       (candidate) => candidate.pointId === state.pointId,
     );
-    state.group = group || null;
     const analysis = C.measurementAnalysis(
       group?.measurements || [],
       state.metric,
     );
-    state.analysis = analysis;
     const complete =
       analysis.count > 0 && analysis.convertedCount === analysis.count;
-    const minimum = Math.min(2, analysis.count);
-    const target = state.targets.has(state.pointId)
-      ? state.targets.get(state.pointId)
-      : String(Math.max(minimum, Math.ceil(analysis.count * 0.9)));
-    $("analysis-keep-count").value = target;
-    $("analysis-keep-count").min = String(minimum || 1);
-    $("analysis-keep-count").max = String(analysis.count);
-    $("analysis-keep-count").disabled = busy || !complete;
     $("analysis-metric").disabled = busy || !analysis.convertedCount;
-    const valid =
-      target !== "" &&
-      Number.isInteger(Number(target)) &&
-      Number(target) >= minimum &&
-      Number(target) <= analysis.count;
-    $("analysis-keep-count").setAttribute(
-      "aria-invalid",
-      String(complete && !valid),
-    );
-    $("analysis-preselect").disabled = busy || !complete || !valid;
-    $("analysis-preselect").textContent =
-      complete && valid
-        ? `Preselect top ${analysis.count - Number(target)} outlier${analysis.count - Number(target) === 1 ? "" : "s"}`
-        : "Preselect outliers";
-    $("analysis-restore").disabled = busy || !analysis.excludedCount;
-    $("analysis-sheet-button").disabled =
-      busy || !complete || !analysis.retainedCount;
+    $("analysis-sheet-button").disabled = busy || !complete;
     $("analysis-summary").textContent = group
-      ? `${group.pointId}: ${analysis.count} imported · ${analysis.convertedCount} converted · ${analysis.retainedCount} retained · ${analysis.excludedCount} excluded.${complete ? " Retained readings determine this point’s CAD mean." : " Convert all readings for this point before selecting exclusions or exporting its mean."}`
+      ? `${group.pointId}: ${analysis.convertedCount} of ${analysis.count} readings converted. ${complete ? "All readings contribute to the CAD mean." : "The plots show converted readings so far. The CAD mean requires all readings to convert."}`
       : "Import and convert receiver measurements to analyze their spread. Pasted grid points are map-only.";
+    renderCharts(analysis.rows, analysis.count);
     $("analysis-statistics-body").replaceChildren(
       ...[
         ["hkE", "Easting (m)"],
         ["hkN", "Northing (m)"],
         ["hkpd", "Height (mPD)"],
       ].map(([key, label]) => {
-        const row = node("tr"),
-          all = analysis.baselineStatistics?.[key],
-          kept = analysis.retainedStatistics?.[key];
+        const row = node("tr"), all = analysis.baselineStatistics?.[key];
         row.append(
           ...[
             label,
             number(all?.mean),
             number(all?.sampleSd),
-            number(kept?.mean),
-            number(kept?.sampleSd),
           ].map((text) => node("td", text)),
         );
         row.dataset.coordinate = key;
@@ -137,9 +193,8 @@
       state.page * PAGE_SIZE,
       (state.page + 1) * PAGE_SIZE,
     )) {
-      const point = entry.point,
-        excluded = point.excludedFromMean === true;
-      const row = node("tr", undefined, excluded ? "analysis-excluded" : "");
+      const point = entry.point;
+      const row = node("tr");
       row.dataset.recordId = point.recordId || "";
       row.dataset.rank = String(entry.rank);
       row.append(node("td", entry.rank));
@@ -176,21 +231,6 @@
         row.append(value);
       }
       row.append(node("td", entry.score.toFixed(6)));
-      const removal = node("td"),
-        label = node("label", undefined, "analysis-removal-label"),
-        checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.checked = excluded;
-      checkbox.dataset.readingIndex = String(entry.index);
-      checkbox.setAttribute(
-        "aria-label",
-        `Remove ${point.name}, ${point.source || "reading"}${point.line ? ` line ${point.line}` : ""}, from mean`,
-      );
-      checkbox.disabled =
-        busy || !complete || (!excluded && analysis.retainedCount <= minimum);
-      label.append(checkbox, node("span", excluded ? "Excluded" : "Keep"));
-      removal.append(label);
-      row.append(removal);
       body.append(row);
     }
     if (!analysis.rows.length) {
@@ -199,7 +239,7 @@
           "td",
           "Converted readings for the selected point will appear here, ranked by departure from the original group mean.",
         );
-      cell.colSpan = 7;
+      cell.colSpan = 6;
       row.append(cell);
       body.append(row);
     }
@@ -207,104 +247,19 @@
     $("analysis-next").disabled = busy || state.page >= pages - 1;
     $("analysis-page-label").textContent = `Page ${state.page + 1} of ${pages}`;
     $("analysis-caption").textContent = analysis.rows.length
-      ? `Showing ${state.page * PAGE_SIZE + 1}–${Math.min((state.page + 1) * PAGE_SIZE, analysis.rows.length)} of ${analysis.rows.length} readings · ${labels[state.metric]} departures, largest first · selections include every page`
+      ? `Showing ${state.page * PAGE_SIZE + 1}–${Math.min((state.page + 1) * PAGE_SIZE, analysis.rows.length)} of ${analysis.rows.length} readings · ${labels[state.metric]} departures, largest first · all converted readings are plotted`
       : "No converted readings";
   }
 
   $("analysis-point").addEventListener("change", (event) => {
     state.pointId = event.target.value;
     state.page = 0;
-    message();
     redraw();
   });
   $("analysis-metric").addEventListener("change", (event) => {
     state.metric = event.target.value;
     state.page = 0;
-    message(
-      "Ranking changed. Existing exclusions stay selected until you preselect again or edit the checkboxes.",
-    );
     redraw();
-  });
-  $("analysis-keep-count").addEventListener("input", (event) => {
-    state.targets.set(state.pointId, event.target.value);
-    message();
-    redraw();
-  });
-  $("analysis-preselect").addEventListener("click", () => {
-    if (state.busy || !state.group) return;
-    try {
-      const excluded = new Set(
-        C.suggestExclusions(
-          state.group.measurements,
-          Number($("analysis-keep-count").value),
-          state.metric,
-        ),
-      );
-      for (const point of state.group.measurements) {
-        point.excludedFromMean = excluded.has(point);
-        point.exclusionReason = point.excludedFromMean
-          ? `Preselected ${labels[state.metric]} outlier from original group mean`
-          : "";
-      }
-      state.page = 0;
-      const ranked = state.analysis.rows;
-      const tied =
-        excluded.size > 0 &&
-        ranked[excluded.size] &&
-        Math.abs(
-          ranked[excluded.size - 1].score - ranked[excluded.size].score,
-        ) < 1e-12;
-      message(
-        `${excluded.size} readings preselected for exclusion in ${state.group.pointId}. Review the highlighted rows and tick or untick to adjust.${tied ? " Departures are tied at the cutoff; equal scores use import order." : ""}`,
-      );
-      changed();
-    } catch (error) {
-      message(error.message);
-    }
-  });
-  $("analysis-restore").addEventListener("click", () => {
-    if (state.busy || !state.group) return;
-    for (const point of state.group.measurements) {
-      point.excludedFromMean = false;
-      point.exclusionReason = "";
-    }
-    message(`All readings restored for ${state.group.pointId}.`);
-    changed();
-  });
-  $("analysis-readings-body").addEventListener("change", (event) => {
-    const checkbox = event.target.closest("input[data-reading-index]");
-    if (!checkbox || state.busy || !state.group) return;
-    const analysis = C.measurementAnalysis(
-      state.group.measurements,
-      state.metric,
-    );
-    const point =
-      state.group.measurements[Number(checkbox.dataset.readingIndex)];
-    if (!point || analysis.count !== analysis.convertedCount) return;
-    if (
-      checkbox.checked &&
-      !point.excludedFromMean &&
-      analysis.retainedCount <= Math.min(2, analysis.count)
-    ) {
-      checkbox.checked = false;
-      message(
-        "Keep at least two readings when available so sample SD remains meaningful.",
-      );
-      return;
-    }
-    point.excludedFromMean = checkbox.checked;
-    point.exclusionReason = checkbox.checked
-      ? "Manually excluded in data analysis"
-      : "";
-    message(
-      `${point.name} ${checkbox.checked ? "excluded from" : "restored to"} the mean for ${state.group.pointId}.`,
-    );
-    changed();
-    $("analysis-readings-body")
-      .querySelector(
-        `input[data-reading-index="${Number(checkbox.dataset.readingIndex)}"]`,
-      )
-      ?.focus({ preventScroll: true });
   });
   $("analysis-previous").addEventListener("click", () => {
     if (state.page > 0) state.page--;
